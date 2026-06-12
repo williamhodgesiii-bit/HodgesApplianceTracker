@@ -20,35 +20,43 @@ export function MarkReceived({ id }: { id: string }) {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        className="btn-success px-3 py-1.5 text-sm"
-        disabled={isPending}
-        onClick={() => submit()}
-      >
-        {isPending ? "Saving…" : "✓ Mark Received"}
-      </button>
-      <button
-        type="button"
-        className="btn-secondary px-2 py-1.5 text-sm"
-        title="Pick a different received date"
-        onClick={() => setOpen((v) => !v)}
-        disabled={isPending}
-      >
-        📅
-      </button>
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="btn-success whitespace-nowrap px-3 py-1.5 text-sm"
+          disabled={isPending}
+          onClick={() => submit()}
+        >
+          {isPending ? "Saving…" : "✓ Mark Received"}
+        </button>
+        <button
+          type="button"
+          className={`btn-secondary px-2 py-1.5 text-sm ${
+            open ? "ring-2 ring-blue-200" : ""
+          }`}
+          title="Pick a different received date"
+          aria-label="Pick a different received date"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          disabled={isPending}
+        >
+          📅
+        </button>
+      </div>
+
+      {/* Custom-date row drops below the buttons so it never overflows the row */}
       {open && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
           <input
             type="date"
-            className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
           <button
             type="button"
-            className="btn-primary px-2 py-1 text-sm"
+            className="btn-primary whitespace-nowrap px-3 py-1 text-sm"
             onClick={() => submit(date)}
             disabled={isPending}
           >
