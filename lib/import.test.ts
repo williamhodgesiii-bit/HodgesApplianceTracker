@@ -50,8 +50,9 @@ describe("parseWorkbook", () => {
     expect(clean.lastName).toBe("Smith");
     expect(clean.deliveryDate).toBe("2026-06-25");
     expect(clean.needsReview).toBe(false);
-    // Expected return derived from the rule (4 days before 6/25/2026).
-    expect(clean.expectedReturnDate).toBe("2026-06-21");
+    // Expected return derived from the rule (4 days before 6/25/2026 lands on
+    // Sunday 6/21 -> moved forward to Monday 6/22).
+    expect(clean.expectedReturnDate).toBe("2026-06-22");
 
     expect(typo.needsReview).toBe(true);
     expect(typo.reviewReasons.join(" ")).toMatch(/slash/i);

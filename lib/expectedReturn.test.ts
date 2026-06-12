@@ -4,46 +4,50 @@ import {
   expectedReturnDate,
   DEFAULT_LEAD_DAYS,
 } from "./expectedReturn";
-import { utcDate, weekdayName, toDateInputValue, diffInDays } from "./dates";
+import { utcDate, weekdayName, toDateInputValue, isWeekend } from "./dates";
 
 describe("expectedReturnDate", () => {
   it("defaults to 4 days before delivery", () => {
     expect(DEFAULT_LEAD_DAYS).toBe(4);
   });
 
-  it("DD = Friday Jul 10, 2026 -> Monday Jul 6 (4 days before)", () => {
+  it("DD = Friday Jul 10, 2026 -> Monday Jul 6 (weekday, no move)", () => {
     const dd = utcDate(2026, 7, 10);
     expect(weekdayName(dd)).toBe("Friday");
     const result = computeExpectedReturn(dd);
     expect(toDateInputValue(result.date)).toBe("2026-07-06");
-    expect(result.leadDays).toBe(4);
+    expect(result.movedToMonday).toBe(false);
   });
 
-  it("DD = Thursday Jun 25, 2026 -> Sunday Jun 21 (4 days before)", () => {
+  it("DD = Thursday Jun 25, 2026 -> lands Sunday, moves to Monday Jun 22", () => {
     const dd = utcDate(2026, 6, 25);
     expect(weekdayName(dd)).toBe("Thursday");
     const result = computeExpectedReturn(dd);
-    expect(toDateInputValue(result.date)).toBe("2026-06-21");
+    expect(toDateInputValue(result.date)).toBe("2026-06-22");
+    expect(weekdayName(result.date)).toBe("Monday");
+    expect(result.movedToMonday).toBe(true);
   });
 
-  it("handles month/year boundaries (Jan 2, 2026 Friday)", () => {
-    // Jan 2, 2026 is a Friday. Minus 4 = Dec 29, 2025 (Monday).
-    const dd = utcDate(2026, 1, 2);
-    expect(weekdayName(dd)).toBe("Friday");
+  it("DD = Wednesday Jul 15, 2026 -> lands Saturday, moves to Monday Jul 13", () => {
+    const dd = utcDate(2026, 7, 15);
+    expect(weekdayName(dd)).toBe("Wednesday");
     const result = computeExpectedReturn(dd);
-    expect(toDateInputValue(result.date)).toBe("2025-12-29");
+    expect(weekdayName(result.date)).toBe("Monday");
+    expect(toDateInputValue(result.date)).toBe("2026-07-13");
+    expect(result.movedToMonday).toBe(true);
   });
 
-  it("is always exactly leadDays before delivery", () => {
+  it("the result is always a business day", () => {
     let d = utcDate(2026, 1, 1);
     for (let i = 0; i < 365; i++) {
       const out = expectedReturnDate(d);
-      expect(diffInDays(d, out)).toBe(DEFAULT_LEAD_DAYS);
+      expect(isWeekend(out)).toBe(false);
       d = utcDate(2026, 1, 1 + i + 1);
     }
   });
 
   it("respects a custom leadDays argument", () => {
+    // Jul 10 (Fri) minus 7 = Jul 3 (Fri), a weekday.
     const dd = utcDate(2026, 7, 10);
     expect(toDateInputValue(expectedReturnDate(dd, 7))).toBe("2026-07-03");
   });
