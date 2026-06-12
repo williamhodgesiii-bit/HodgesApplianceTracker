@@ -1,0 +1,53 @@
+// Prisma schema for Appliance Tracker
+// Datasource: Postgres (Neon). See README for setup.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Lab {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  appliances Appliance[]
+
+  @@map("labs")
+}
+
+model Appliance {
+  id                 String    @id @default(cuid())
+  patientFirstName   String    @map("patient_first_name")
+  patientLastName    String    @map("patient_last_name")
+  labId              String    @map("lab_id")
+  lab                Lab       @relation(fields: [labId], references: [id])
+  applianceType      String    @map("appliance_type")
+  dateSent           DateTime  @map("date_sent") @db.Date
+  deliveryDate       DateTime  @map("delivery_date") @db.Date
+  expectedReturnDate DateTime  @map("expected_return_date") @db.Date
+  receivedDate       DateTime? @map("received_date") @db.Date
+  notes              String    @default("")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([labId])
+  @@index([receivedDate])
+  @@index([expectedReturnDate])
+  @@map("appliances")
+}

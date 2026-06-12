@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Reusable bits ----------------------------------------------------------- */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+  }
+  .btn-success {
+    @apply btn bg-green-600 text-white hover:bg-green-700;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-700;
+  }
+  .input {
+    @apply mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200;
+  }
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+}
+
+/* Print-friendly report stylesheet --------------------------------------- */
+@media print {
+  /* Hide app chrome (nav, buttons) when printing the report. */
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    font-size: 12px;
+  }
+  .print-full {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  @page {
+    margin: 1.5cm;
+  }
+}
