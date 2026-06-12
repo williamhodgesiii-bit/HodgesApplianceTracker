@@ -6,6 +6,17 @@ import { prisma } from "./prisma";
 import { auth } from "./auth";
 import { parseDateInput } from "./dates";
 import { expectedReturnDate } from "./expectedReturn";
+import { ensureApplianceType } from "./appliance-type-actions";
+
+/** Resolve the appliance type, creating a new managed type when requested. */
+async function resolveApplianceType(formData: FormData): Promise<string> {
+  const selected = String(formData.get("applianceType") ?? "");
+  const newName = String(formData.get("newApplianceTypeName") ?? "").trim();
+  if (selected === "__new__" && newName) {
+    return ensureApplianceType(newName);
+  }
+  return selected;
+}
 
 async function requireAuth() {
   const session = await auth();
@@ -70,11 +81,13 @@ export async function createAppliance(
     labId = await ensureLab(newLabName);
   }
 
+  const applianceType = await resolveApplianceType(formData);
+
   const parsed = applianceSchema.safeParse({
     patientFirstName: formData.get("patientFirstName"),
     patientLastName: formData.get("patientLastName"),
     labId,
-    applianceType: formData.get("applianceType"),
+    applianceType,
     dateSent: formData.get("dateSent"),
     deliveryDate: formData.get("deliveryDate"),
     expectedReturnDate: formData.get("expectedReturnDate") || undefined,
@@ -150,11 +163,13 @@ export async function updateAppliance(
     labId = await ensureLab(newLabName);
   }
 
+  const applianceType = await resolveApplianceType(formData);
+
   const parsed = applianceSchema.safeParse({
     patientFirstName: formData.get("patientFirstName"),
     patientLastName: formData.get("patientLastName"),
     labId,
-    applianceType: formData.get("applianceType"),
+    applianceType,
     dateSent: formData.get("dateSent"),
     deliveryDate: formData.get("deliveryDate"),
     expectedReturnDate: formData.get("expectedReturnDate") || undefined,

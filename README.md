@@ -33,19 +33,20 @@ Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma*
 
 ### The expected-return rule (core business logic)
 
-> `expected_return_date = delivery_date − 3 calendar days`, then adjusted
-> **backward** until it lands on a business day (Mon–Fri).
+> `expected_return_date = delivery_date − 4 calendar days` (a suggested
+> default).
 
-| Delivery date (DD) | −3 days lands on | Expected return |
-| ------------------ | ---------------- | --------------- |
-| Friday             | Tuesday          | Tuesday         |
-| Monday             | Friday (prev wk) | that Friday     |
-| Tuesday            | Saturday         | rolls back to Friday |
-| Wednesday          | Sunday           | rolls back to Friday |
+The expected date auto-fills on the Add/Edit form as soon as you pick a
+delivery date, and can be **manually entered or adjusted** on any case (a
+"Reset to auto" link puts it back to the default).
 
 This lives in [`lib/expectedReturn.ts`](lib/expectedReturn.ts) as a pure,
 unit-tested function. Status (Overdue / Due Soon / On Track) is **always derived
 from dates, never stored** ([`lib/status.ts`](lib/status.ts)).
+
+Appliance types are a managed list (Settings → Appliance types) that powers the
+picker on the Add/Edit form; you can also add a new type inline while entering a
+case.
 
 ---
 

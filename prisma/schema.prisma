@@ -31,6 +31,20 @@ model Lab {
   @@map("labs")
 }
 
+// Controlled vocabulary of appliance types for the Add/Edit dropdown.
+// Appliance.applianceType stays a free string so imports and history are never
+// broken; this table just powers the picker and lets the office manage choices.
+model ApplianceType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("appliance_types")
+}
+
 model Appliance {
   id                 String    @id @default(cuid())
   patientFirstName   String    @map("patient_first_name")

@@ -148,12 +148,40 @@ export async function getLabs(): Promise<Lab[]> {
   return prisma.lab.findMany({ orderBy: { name: "asc" } });
 }
 
-/** Distinct appliance types for autocomplete. */
+/**
+ * Appliance-type options for the Add/Edit dropdown: the managed (active) list
+ * first, in its configured order, followed by any historical types still in use
+ * that aren't in the managed list (so old/imported data stays selectable).
+ */
 export async function getApplianceTypes(): Promise<string[]> {
-  const rows = await prisma.appliance.findMany({
-    select: { applianceType: true },
-    distinct: ["applianceType"],
-    orderBy: { applianceType: "asc" },
+  const [managed, used] = await Promise.all([
+    prisma.applianceType.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { name: true },
+    }),
+    prisma.appliance.findMany({
+      select: { applianceType: true },
+      distinct: ["applianceType"],
+      orderBy: { applianceType: "asc" },
+    }),
+  ]);
+
+  const names = managed.map((m) => m.name);
+  const seen = new Set(names.map((n) => n.toLowerCase()));
+  for (const r of used) {
+    const t = r.applianceType?.trim();
+    if (t && !seen.has(t.toLowerCase())) {
+      names.push(t);
+      seen.add(t.toLowerCase());
+    }
+  }
+  return names;
+}
+
+/** Full managed appliance-type rows for the Settings screen. */
+export async function getManagedApplianceTypes() {
+  return prisma.applianceType.findMany({
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
-  return rows.map((r) => r.applianceType).filter(Boolean);
 }

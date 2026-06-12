@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/appliances", label: "All Appliances", icon: "📋" },
   { href: "/report", label: "Report", icon: "🖨" },
   { href: "/import", label: "Import", icon: "📥" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
 export function Nav({ userName }: { userName?: string | null }) {

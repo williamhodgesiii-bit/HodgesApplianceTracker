@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useRef } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Lab } from "@prisma/client";
 import {
@@ -9,7 +9,7 @@ import {
   type ActionResult,
 } from "@/lib/appliance-actions";
 import { computeExpectedReturn } from "@/lib/expectedReturn";
-import { parseDateInput, toDateInputValue, formatInput } from "@/lib/dates";
+import { parseDateInput, toDateInputValue, relativeFromInput } from "@/lib/dates";
 import type { ApplianceDTO } from "@/lib/queries";
 
 interface Props {
@@ -21,6 +21,17 @@ interface Props {
 }
 
 const todayValue = () => toDateInputValue(new Date());
+
+function autoExpected(deliveryDate: string): string {
+  if (!deliveryDate) return "";
+  try {
+    return toDateInputValue(
+      computeExpectedReturn(parseDateInput(deliveryDate)).date
+    );
+  } catch {
+    return "";
+  }
+}
 
 export function ApplianceForm({
   labs,
@@ -34,37 +45,35 @@ export function ApplianceForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   const [deliveryDate, setDeliveryDate] = useState(initial?.deliveryDate ?? "");
-  const [overrideExpected, setOverrideExpected] = useState(false);
-  const [expectedManual, setExpectedManual] = useState(
-    initial?.expectedReturnDate ?? ""
-  );
   const [labId, setLabId] = useState(initial?.labId ?? "");
+  const [applianceType, setApplianceType] = useState(
+    initial?.applianceType ?? ""
+  );
+  const [expected, setExpected] = useState(initial?.expectedReturnDate ?? "");
+  // Once the user hand-edits expected, stop auto-syncing it to delivery.
+  const [expectedTouched, setExpectedTouched] = useState(mode === "edit");
   const [result, setResult] = useState<ActionResult | null>(null);
 
-  // Live expected-return calculation as the delivery date changes.
-  const computed = useMemo(() => {
-    if (!deliveryDate) return null;
-    try {
-      return computeExpectedReturn(parseDateInput(deliveryDate));
-    } catch {
-      return null;
-    }
-  }, [deliveryDate]);
+  // Auto-fill the expected date from delivery until the user takes it over.
+  useEffect(() => {
+    if (!expectedTouched) setExpected(autoExpected(deliveryDate));
+  }, [deliveryDate, expectedTouched]);
 
-  const expectedValue =
-    overrideExpected && expectedManual
-      ? expectedManual
-      : computed
-      ? toDateInputValue(computed.date)
-      : "";
+  // In edit mode, make sure a historical type still appears as an option.
+  const typeOptions =
+    initial?.applianceType && !applianceTypes.includes(initial.applianceType)
+      ? [initial.applianceType, ...applianceTypes]
+      : applianceTypes;
+
+  const isAutoExpected = expected === autoExpected(deliveryDate);
+
+  const resetExpectedToAuto = () => {
+    setExpectedTouched(false);
+    setExpected(autoExpected(deliveryDate));
+  };
 
   const handleSubmit = (formData: FormData) => {
-    // Ensure the (possibly auto-computed) expected date is submitted.
-    if (overrideExpected && expectedManual) {
-      formData.set("expectedReturnDate", expectedManual);
-    } else {
-      formData.delete("expectedReturnDate"); // let the server compute it
-    }
+    formData.set("expectedReturnDate", expected);
     startTransition(async () => {
       const res =
         mode === "create"
@@ -75,15 +84,13 @@ export function ApplianceForm({
         if (mode === "create" && !res.warning) {
           formRef.current?.reset();
           setDeliveryDate("");
-          setOverrideExpected(false);
-          setExpectedManual("");
           setLabId("");
+          setApplianceType("");
+          setExpected("");
+          setExpectedTouched(false);
         }
         router.refresh();
         if (mode === "edit") onDone?.();
-        if (mode === "create" && res.warning) {
-          // keep values so the user can see the warning; do not clear
-        }
       }
     });
   };
@@ -152,22 +159,34 @@ export function ApplianceForm({
         </div>
         <div>
           <label className="label" htmlFor="applianceType">
-            Appliance type
+            Appliance
           </label>
-          <input
+          <select
             id="applianceType"
             name="applianceType"
             className="input"
             required
-            list="appliance-types"
-            defaultValue={initial?.applianceType ?? ""}
-            placeholder="e.g. Retainer, Expander"
-          />
-          <datalist id="appliance-types">
-            {applianceTypes.map((t) => (
-              <option key={t} value={t} />
+            value={applianceType}
+            onChange={(e) => setApplianceType(e.target.value)}
+          >
+            <option value="" disabled>
+              Select an appliance…
+            </option>
+            {typeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
-          </datalist>
+            <option value="__new__">➕ Add new appliance type…</option>
+          </select>
+          {applianceType === "__new__" && (
+            <input
+              name="newApplianceTypeName"
+              className="input mt-2"
+              placeholder="New appliance type"
+              autoFocus
+            />
+          )}
         </div>
       </div>
 
@@ -201,42 +220,53 @@ export function ApplianceForm({
         </div>
       </div>
 
-      {/* Live expected-return preview */}
+      {/* Expected return — auto-filled (4 days before delivery), fully editable */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <span className="text-sm font-medium text-slate-600">
-              Expected back in office:
-            </span>{" "}
-            <span className="text-lg font-bold text-blue-800">
-              {expectedValue ? formatInput(expectedValue) : "—"}
-            </span>
-          </div>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-[12rem] flex-1">
+            <label
+              className="label flex items-center justify-between"
+              htmlFor="expectedReturnDate"
+            >
+              <span>Expected back in office</span>
+              {!isAutoExpected && deliveryDate && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-blue-700 hover:underline"
+                  onClick={resetExpectedToAuto}
+                >
+                  Reset to auto
+                </button>
+              )}
+            </label>
             <input
-              type="checkbox"
-              checked={overrideExpected}
+              id="expectedReturnDate"
+              type="date"
+              className="input"
+              value={expected}
               onChange={(e) => {
-                setOverrideExpected(e.target.checked);
-                if (e.target.checked && !expectedManual) {
-                  setExpectedManual(expectedValue);
-                }
+                setExpected(e.target.value);
+                setExpectedTouched(true);
               }}
             />
-            Override
-          </label>
+          </div>
+          <div className="pb-2 text-sm text-slate-600">
+            {expected ? (
+              <>
+                <span className="font-semibold text-blue-800">
+                  {relativeFromInput(expected)}
+                </span>
+                {isAutoExpected && (
+                  <span className="ml-1 text-slate-500">
+                    · auto (4 days before delivery)
+                  </span>
+                )}
+              </>
+            ) : (
+              "Pick a delivery date to auto-fill."
+            )}
+          </div>
         </div>
-        {computed && !overrideExpected && (
-          <p className="mt-1 text-sm text-slate-500">{computed.explanation}</p>
-        )}
-        {overrideExpected && (
-          <input
-            type="date"
-            className="input mt-2"
-            value={expectedManual}
-            onChange={(e) => setExpectedManual(e.target.value)}
-          />
-        )}
       </div>
 
       {mode === "edit" && (
