@@ -6,23 +6,31 @@
   color-scheme: light;
 }
 
+html {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+}
+
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-100 text-slate-900 antialiased;
 }
 
 /* Reusable bits ----------------------------------------------------------- */
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-medium shadow-sm transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700;
+    @apply btn bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
   }
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700;
+    @apply btn bg-emerald-600 text-white shadow-emerald-600/20 hover:bg-emerald-700;
+  }
+  .btn-ghost {
+    @apply btn shadow-none text-slate-600 hover:bg-slate-100;
   }
   .label {
     @apply block text-sm font-medium text-slate-700;
@@ -32,6 +40,30 @@ body {
   }
   .card {
     @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  /* Small rounded label for lab / type */
+  .chip {
+    @apply inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200;
+  }
+
+  /* KPI / summary cards on the dashboard */
+  .kpi {
+    @apply flex flex-col gap-1 rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md;
+  }
+  .kpi-value {
+    @apply text-3xl font-bold leading-none tracking-tight;
+  }
+  .kpi-label {
+    @apply text-sm font-medium;
+  }
+
+  /* Table header cells used across list views */
+  .th {
+    @apply px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .td {
+    @apply px-4 py-3 align-middle;
   }
 }
 
@@ -47,7 +79,10 @@ body {
   }
   .print-full {
     box-shadow: none !important;
-    border: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  .kpi {
+    box-shadow: none !important;
   }
   .page-break {
     page-break-before: always;

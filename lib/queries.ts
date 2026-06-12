@@ -6,7 +6,7 @@ import {
   isLateArrival,
   type ApplianceStatus,
 } from "./status";
-import { toDateInputValue } from "./dates";
+import { toDateInputValue, addDays, today } from "./dates";
 
 /** Serializable shape passed to client components. Dates are YYYY-MM-DD. */
 export interface ApplianceDTO {
@@ -134,6 +134,14 @@ export async function getReportData(
     dueSoon: dtos.filter((d) => d.status === "DUE_SOON"),
     onTrack: dtos.filter((d) => d.status === "ON_TRACK"),
   };
+}
+
+/** How many appliances were marked received in the last `days` days. */
+export async function getReceivedRecentCount(days = 7): Promise<number> {
+  const start = addDays(today(), -(days - 1));
+  return prisma.appliance.count({
+    where: { receivedDate: { gte: start } },
+  });
 }
 
 export async function getLabs(): Promise<Lab[]> {

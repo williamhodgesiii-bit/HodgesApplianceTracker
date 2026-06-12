@@ -156,4 +156,26 @@ export function formatInputWithYear(value: string | null | undefined): string {
   return formatDisplayWithYear(parseDateInput(value));
 }
 
+/**
+ * Plain-English relative day vs. today: "Today", "Tomorrow", "Yesterday",
+ * "in 3 days", "3 days ago". Calendar-day based (no time-of-day).
+ */
+export function relativeDay(date: Date, ref: Date = today()): string {
+  const diff = diffInDays(toUtcMidnight(date), toUtcMidnight(ref));
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  if (diff > 0) return `in ${diff} days`;
+  return `${Math.abs(diff)} days ago`;
+}
+
+/** Like relativeDay but takes a `YYYY-MM-DD` string. Empty input → "". */
+export function relativeFromInput(
+  value: string | null | undefined,
+  ref?: Date
+): string {
+  if (!value) return "";
+  return relativeDay(parseDateInput(value), ref);
+}
+
 export { WEEKDAY_NAMES };
