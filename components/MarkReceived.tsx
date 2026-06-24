@@ -11,59 +11,60 @@ export function MarkReceived({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const submit = (chosen?: string) => {
+  const save = () => {
     startTransition(async () => {
-      await markReceived(id, chosen);
+      await markReceived(id, date);
       setOpen(false);
       router.refresh();
     });
   };
 
-  return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex items-center gap-2">
+  if (!open) {
+    return (
+      <div className="flex justify-end">
         <button
           type="button"
           className="btn-success whitespace-nowrap px-3 py-1.5 text-sm"
-          disabled={isPending}
-          onClick={() => submit()}
+          onClick={() => {
+            setDate(toDateInputValue(new Date()));
+            setOpen(true);
+          }}
         >
-          {isPending ? "Saving…" : "✓ Mark Received"}
-        </button>
-        <button
-          type="button"
-          className={`btn-secondary px-2 py-1.5 text-sm ${
-            open ? "ring-2 ring-blue-200" : ""
-          }`}
-          title="Pick a different received date"
-          aria-label="Pick a different received date"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          disabled={isPending}
-        >
-          📅
+          ✓ Mark Received
         </button>
       </div>
+    );
+  }
 
-      {/* Custom-date row drops below the buttons so it never overflows the row */}
-      {open && (
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-          <input
-            type="date"
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          <button
-            type="button"
-            className="btn-primary whitespace-nowrap px-3 py-1 text-sm"
-            onClick={() => submit(date)}
-            disabled={isPending}
-          >
-            Save
-          </button>
-        </div>
-      )}
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <label className="text-sm font-medium text-slate-600" htmlFor={`received-${id}`}>
+        Received on
+      </label>
+      <input
+        id={`received-${id}`}
+        type="date"
+        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        disabled={isPending}
+      />
+      <button
+        type="button"
+        className="btn-success whitespace-nowrap px-3 py-1.5 text-sm"
+        onClick={save}
+        disabled={isPending || !date}
+      >
+        {isPending ? "Saving…" : "Save"}
+      </button>
+      <button
+        type="button"
+        className="btn-secondary px-3 py-1.5 text-sm"
+        onClick={() => setOpen(false)}
+        disabled={isPending}
+      >
+        Cancel
+      </button>
     </div>
   );
 }
