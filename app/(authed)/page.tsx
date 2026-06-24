@@ -1,12 +1,15 @@
 import Link from "next/link";
-import { getDashboardData } from "@/lib/queries";
-import { DashboardSection } from "@/components/DashboardSection";
+import { getDashboardData, getLabs } from "@/lib/queries";
+import { DashboardClient } from "@/components/DashboardClient";
 import { formatDisplayWithYear, today } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { overdue, dueSoon, onTrack } = await getDashboardData();
+  const [{ overdue, dueSoon, onTrack }, labs] = await Promise.all([
+    getDashboardData(),
+    getLabs(),
+  ]);
   const total = overdue.length + dueSoon.length + onTrack.length;
 
   return (
@@ -40,30 +43,12 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
-          <DashboardSection
-            title="Overdue"
-            emoji="🔴"
-            accent="border-red-200 bg-red-50 text-red-900"
-            appliances={overdue}
-            emptyText="Nothing overdue. 🎉"
-            showOverdue
-          />
-          <DashboardSection
-            title="Due Soon"
-            emoji="🟡"
-            accent="border-amber-200 bg-amber-50 text-amber-900"
-            appliances={dueSoon}
-            emptyText="Nothing due in the next 3 business days."
-          />
-          <DashboardSection
-            title="On Track"
-            emoji="🟢"
-            accent="border-green-200 bg-green-50 text-green-900"
-            appliances={onTrack}
-            emptyText="Nothing further out right now."
-          />
-        </div>
+        <DashboardClient
+          overdue={overdue}
+          dueSoon={dueSoon}
+          onTrack={onTrack}
+          labs={labs}
+        />
       )}
     </div>
   );
