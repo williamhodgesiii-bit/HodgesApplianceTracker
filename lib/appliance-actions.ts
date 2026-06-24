@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
-import { auth } from "./auth";
 import { parseDateInput } from "./dates";
 import { expectedReturnDate } from "./expectedReturn";
 import { ensureApplianceType } from "./appliance-type-actions";
@@ -16,12 +15,6 @@ async function resolveApplianceType(formData: FormData): Promise<string> {
     return ensureApplianceType(newName);
   }
   return selected;
-}
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
-  return session;
 }
 
 function revalidateAll() {
@@ -62,7 +55,6 @@ export async function ensureLab(name: string): Promise<string> {
 }
 
 export async function addLab(name: string): Promise<ActionResult> {
-  await requireAuth();
   if (!name.trim()) return { ok: false, error: "Lab name is required" };
   const id = await ensureLab(name);
   revalidateAll();
@@ -72,8 +64,6 @@ export async function addLab(name: string): Promise<ActionResult> {
 export async function createAppliance(
   formData: FormData
 ): Promise<ActionResult> {
-  await requireAuth();
-
   // Allow creating a brand-new lab inline via a "__new__" sentinel.
   let labId = String(formData.get("labId") ?? "");
   const newLabName = String(formData.get("newLabName") ?? "").trim();
@@ -155,8 +145,6 @@ export async function updateAppliance(
   id: string,
   formData: FormData
 ): Promise<ActionResult> {
-  await requireAuth();
-
   let labId = String(formData.get("labId") ?? "");
   const newLabName = String(formData.get("newLabName") ?? "").trim();
   if (labId === "__new__" && newLabName) {
@@ -212,7 +200,6 @@ export async function markReceived(
   id: string,
   receivedDate?: string
 ): Promise<ActionResult> {
-  await requireAuth();
   const date = receivedDate ? parseDateInput(receivedDate) : new Date();
   await prisma.appliance.update({
     where: { id },
@@ -224,7 +211,6 @@ export async function markReceived(
 
 /** Undo a received mark (set back to outstanding). */
 export async function markUnreceived(id: string): Promise<ActionResult> {
-  await requireAuth();
   await prisma.appliance.update({
     where: { id },
     data: { receivedDate: null },
@@ -234,7 +220,6 @@ export async function markUnreceived(id: string): Promise<ActionResult> {
 }
 
 export async function deleteAppliance(id: string): Promise<ActionResult> {
-  await requireAuth();
   await prisma.appliance.delete({ where: { id } });
   revalidateAll();
   return { ok: true };

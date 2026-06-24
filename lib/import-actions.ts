@@ -2,21 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
-import { auth } from "./auth";
 import { parseWorkbook, type ImportPreview, type ImportRow } from "./import";
 import { ensureLab } from "./appliance-actions";
 import { parseDateInput } from "./dates";
 import { expectedReturnDate } from "./expectedReturn";
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
-}
-
 export async function parseImport(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string; preview?: ImportPreview }> {
-  await requireAuth();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "Please choose an .xlsx file to import." };
@@ -49,8 +42,6 @@ export interface CommitResult {
 }
 
 export async function commitImport(rows: ImportRow[]): Promise<CommitResult> {
-  await requireAuth();
-
   let imported = 0;
   let skipped = 0;
 

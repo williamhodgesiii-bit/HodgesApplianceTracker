@@ -2,14 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
-import { auth } from "./auth";
 import type { ActionResult } from "./appliance-actions";
-
-async function requireAuth() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
-  return session;
-}
 
 function revalidate() {
   revalidatePath("/settings");
@@ -46,7 +39,6 @@ export async function ensureApplianceType(name: string): Promise<string> {
 }
 
 export async function addApplianceType(name: string): Promise<ActionResult> {
-  await requireAuth();
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, error: "Type name is required" };
   await ensureApplianceType(trimmed);
@@ -58,7 +50,6 @@ export async function renameApplianceType(
   id: string,
   name: string
 ): Promise<ActionResult> {
-  await requireAuth();
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, error: "Type name is required" };
   const clash = await prisma.applianceType.findFirst({
@@ -75,7 +66,6 @@ export async function renameApplianceType(
 
 /** Remove a type from the picker. Existing appliance records are unaffected. */
 export async function deleteApplianceType(id: string): Promise<ActionResult> {
-  await requireAuth();
   await prisma.applianceType.delete({ where: { id } });
   revalidate();
   return { ok: true };

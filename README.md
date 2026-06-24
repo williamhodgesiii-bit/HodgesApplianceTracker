@@ -7,7 +7,11 @@ color-coded dashboard, fast data entry, a printable doctor report, and a
 spreadsheet importer.
 
 Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma**,
-**Tailwind CSS**, and **Auth.js (NextAuth v5)** email/password login.
+and **Tailwind CSS**.
+
+> **Note:** Authentication is temporarily disabled. Every page is open — there
+> is no login screen for now. (The user model and `create-user` CLI are still
+> in place, so login can be re-added later.)
 
 ---
 
@@ -28,8 +32,6 @@ Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma*
   and anything ambiguous (e.g. a typo like `DD723`) is **flagged for review**
   before committing.
 - **Labs are user-manageable** — add a new lab from the dropdown on the fly.
-- **Auth** — email/password (bcrypt) with no public sign-up. All pages require
-  login. Includes a change-password page and a CLI to create users.
 
 ### The expected-return rule (core business logic)
 
@@ -65,15 +67,13 @@ npm install
 
 # 2. Configure environment
 cp .env.example .env
-#    then edit .env and set DATABASE_URL and AUTH_SECRET (see below)
+#    then edit .env and set DATABASE_URL (see below)
 
 # 3. Create the database schema
 npx prisma migrate dev      # creates tables from prisma/schema.prisma
 
-# 4. Seed the initial user + starter labs + ~10 sample appliances
+# 4. Seed starter labs + ~10 sample appliances
 npm run db:seed
-#    Default login:  assistant@office.test  /  password123
-#    (override with SEED_USER_EMAIL / SEED_USER_PASSWORD env vars)
 
 # 5. Start the dev server
 npm run dev                 # http://localhost:3000
@@ -99,7 +99,6 @@ derivation, and the spreadsheet parser:
 | Variable        | Required | Description                                                                 |
 | --------------- | -------- | --------------------------------------------------------------------------- |
 | `DATABASE_URL`  | yes      | Postgres connection string. Use the **pooled** Neon URL for the app.        |
-| `AUTH_SECRET`   | yes      | Secret used to sign session cookies. Generate with `openssl rand -base64 32`. |
 
 `.env` is git-ignored. `.env.example` documents the format.
 
@@ -130,28 +129,9 @@ derivation, and the spreadsheet parser:
 
 ---
 
-## Create the first user (and more users)
-
-There is **no public sign-up**. Seed one, or use the CLI:
-
-```bash
-# Seeds the default user + sample data
-npm run db:seed
-
-# Or create/update a specific user:
-npm run user:create -- --email you@office.com --password "a-strong-password" --name "Jane"
-
-# Non-interactive via env vars also works:
-USER_EMAIL=you@office.com USER_PASSWORD="a-strong-password" npm run user:create
-```
-
-Users can change their own password from the **Account** page after logging in.
-
----
-
 ## Import the spreadsheet
 
-1. Log in and go to **Import**.
+1. Go to **Import**.
 2. Upload the office `.xlsx`. Sheets named like `June26`, `July26` are parsed
    (one sheet per month); the year is inferred from the sheet name.
 3. Expected columns: `LAB, LAST NAME, FIRST NAME, SENT, EXPECTED, RECEIVED, Notes`.
@@ -180,17 +160,12 @@ git push origin main         # or your branch
 1. Go to [vercel.com/new](https://vercel.com/new) and **import the GitHub repo**.
 2. Add the environment variables in **Project Settings → Environment Variables**:
    - `DATABASE_URL` (added automatically if you create the Neon DB via Vercel Storage)
-   - `AUTH_SECRET`
 3. **Deploy.** The build runs `prisma generate && next build` (see `package.json`).
 4. After the first deploy, apply the schema to the production database:
    ```bash
    npx prisma migrate deploy
    ```
    (run locally against the production `DATABASE_URL`, or as a one-off command).
-5. Create your real login user against the production DB:
-   ```bash
-   npm run user:create -- --email you@office.com --password "..."
-   ```
 
 ---
 
@@ -198,15 +173,13 @@ git push origin main         # or your branch
 
 ```
 app/
-  (authed)/            Pages that require login (share the nav layout)
+  (authed)/            App pages (share the nav layout)
     page.tsx           Dashboard (default landing page)
     add/               Add Appliance
     appliances/        All Appliances (search / filter / inline edit)
     report/            Printable report + CSV export
     import/            Spreadsheet import wizard
-    account/           Change password
-  login/               Login page (+ server action)
-  api/auth/[...nextauth]  Auth.js route handler
+    settings/          Manage the appliance-type list
 components/             UI components (forms, tables, badges)
 lib/
   dates.ts             Timezone-safe calendar-date helpers
@@ -216,12 +189,12 @@ lib/
   import.ts            Workbook parsing (unit tested)
   queries.ts           Data access + serializable DTOs
   *-actions.ts         Server actions (mutations)
-  auth.ts / prisma.ts  Auth.js and Prisma singletons
+  prisma.ts            Prisma client singleton
 prisma/
   schema.prisma        users, labs, appliances
-  seed.ts              Seed user + labs + sample appliances
+  seed.ts              Seed labs + sample appliances
 scripts/
-  create-user.ts       CLI to add/update a login user
+  create-user.ts       CLI to add/update a login user (for re-enabling auth)
   make-sample-xlsx.ts  Generate a sample import file
 ```
 
