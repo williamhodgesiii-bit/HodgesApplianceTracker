@@ -31,8 +31,8 @@ and **Tailwind CSS**.
 ### The expected-return rule (core business logic)
 
 > `expected_return_date = delivery_date − 4 calendar days` (a suggested
-> default). If that lands on a Saturday or Sunday it moves forward to the
-> following Monday.
+> default). If that lands on a Saturday or Sunday it moves back to the
+> preceding Friday.
 
 The expected date auto-fills on the Add/Edit form as soon as you pick a
 delivery date, and can be **manually entered or adjusted** on any case (a

@@ -16,25 +16,25 @@ describe("expectedReturnDate", () => {
     expect(weekdayName(dd)).toBe("Friday");
     const result = computeExpectedReturn(dd);
     expect(toDateInputValue(result.date)).toBe("2026-07-06");
-    expect(result.movedToMonday).toBe(false);
+    expect(result.movedOffWeekend).toBe(false);
   });
 
-  it("DD = Thursday Jun 25, 2026 -> lands Sunday, moves to Monday Jun 22", () => {
+  it("DD = Thursday Jun 25, 2026 -> lands Sunday, moves back to Friday Jun 19", () => {
     const dd = utcDate(2026, 6, 25);
     expect(weekdayName(dd)).toBe("Thursday");
     const result = computeExpectedReturn(dd);
-    expect(toDateInputValue(result.date)).toBe("2026-06-22");
-    expect(weekdayName(result.date)).toBe("Monday");
-    expect(result.movedToMonday).toBe(true);
+    expect(toDateInputValue(result.date)).toBe("2026-06-19");
+    expect(weekdayName(result.date)).toBe("Friday");
+    expect(result.movedOffWeekend).toBe(true);
   });
 
-  it("DD = Wednesday Jul 15, 2026 -> lands Saturday, moves to Monday Jul 13", () => {
+  it("DD = Wednesday Jul 15, 2026 -> lands Saturday, moves back to Friday Jul 10", () => {
     const dd = utcDate(2026, 7, 15);
     expect(weekdayName(dd)).toBe("Wednesday");
     const result = computeExpectedReturn(dd);
-    expect(weekdayName(result.date)).toBe("Monday");
-    expect(toDateInputValue(result.date)).toBe("2026-07-13");
-    expect(result.movedToMonday).toBe(true);
+    expect(weekdayName(result.date)).toBe("Friday");
+    expect(toDateInputValue(result.date)).toBe("2026-07-10");
+    expect(result.movedOffWeekend).toBe(true);
   });
 
   it("the result is always a business day", () => {
