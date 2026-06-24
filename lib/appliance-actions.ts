@@ -21,6 +21,10 @@ function revalidateAll() {
   revalidatePath("/");
   revalidatePath("/appliances");
   revalidatePath("/report");
+  // Keep the Add form's lab/appliance-type dropdowns and the Settings managers
+  // in sync when a case inline-creates a new lab or appliance type.
+  revalidatePath("/add");
+  revalidatePath("/settings");
 }
 
 const applianceSchema = z.object({
@@ -58,8 +62,6 @@ export async function addLab(name: string): Promise<ActionResult> {
   if (!name.trim()) return { ok: false, error: "Lab name is required" };
   const id = await ensureLab(name);
   revalidateAll();
-  revalidatePath("/settings");
-  revalidatePath("/add");
   return { ok: true, id };
 }
 
@@ -72,8 +74,6 @@ export async function renameLab(id: string, name: string): Promise<ActionResult>
   if (clash) return { ok: false, error: "Another lab already has that name" };
   await prisma.lab.update({ where: { id }, data: { name: trimmed } });
   revalidateAll();
-  revalidatePath("/settings");
-  revalidatePath("/add");
   return { ok: true, id };
 }
 
@@ -90,8 +90,6 @@ export async function deleteLab(id: string): Promise<ActionResult> {
   }
   await prisma.lab.delete({ where: { id } });
   revalidateAll();
-  revalidatePath("/settings");
-  revalidatePath("/add");
   return { ok: true };
 }
 
