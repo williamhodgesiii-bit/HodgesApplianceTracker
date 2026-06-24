@@ -58,7 +58,41 @@ export async function addLab(name: string): Promise<ActionResult> {
   if (!name.trim()) return { ok: false, error: "Lab name is required" };
   const id = await ensureLab(name);
   revalidateAll();
+  revalidatePath("/settings");
+  revalidatePath("/add");
   return { ok: true, id };
+}
+
+export async function renameLab(id: string, name: string): Promise<ActionResult> {
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: "Lab name is required" };
+  const clash = await prisma.lab.findFirst({
+    where: { name: { equals: trimmed, mode: "insensitive" }, id: { not: id } },
+  });
+  if (clash) return { ok: false, error: "Another lab already has that name" };
+  await prisma.lab.update({ where: { id }, data: { name: trimmed } });
+  revalidateAll();
+  revalidatePath("/settings");
+  revalidatePath("/add");
+  return { ok: true, id };
+}
+
+/** Remove a lab. Blocked if any appliance still references it. */
+export async function deleteLab(id: string): Promise<ActionResult> {
+  const inUse = await prisma.appliance.count({ where: { labId: id } });
+  if (inUse > 0) {
+    return {
+      ok: false,
+      error: `This lab is used by ${inUse} appliance${
+        inUse === 1 ? "" : "s"
+      }. Reassign or remove those first.`,
+    };
+  }
+  await prisma.lab.delete({ where: { id } });
+  revalidateAll();
+  revalidatePath("/settings");
+  revalidatePath("/add");
+  return { ok: true };
 }
 
 export async function createAppliance(
