@@ -153,6 +153,11 @@ export async function getLabs(): Promise<Lab[]> {
   return prisma.lab.findMany({ orderBy: { name: "asc" } });
 }
 
+/** Total number of appliance records (used by the Settings clear-data panel). */
+export async function getApplianceCount(): Promise<number> {
+  return prisma.appliance.count();
+}
+
 /**
  * Appliance-type options for the Add/Edit dropdown: the managed (active) list
  * first, in its configured order, followed by any historical types still in use

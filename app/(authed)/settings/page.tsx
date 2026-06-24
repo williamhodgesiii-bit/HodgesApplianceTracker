@@ -1,13 +1,19 @@
-import { getManagedApplianceTypes, getLabs } from "@/lib/queries";
+import {
+  getManagedApplianceTypes,
+  getLabs,
+  getApplianceCount,
+} from "@/lib/queries";
 import { ApplianceTypeManager } from "@/components/ApplianceTypeManager";
 import { LabManager } from "@/components/LabManager";
+import { ClearDataPanel } from "@/components/ClearDataPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [types, labs] = await Promise.all([
+  const [types, labs, applianceCount] = await Promise.all([
     getManagedApplianceTypes(),
     getLabs(),
+    getApplianceCount(),
   ]);
 
   return (
@@ -30,6 +36,15 @@ export default async function SettingsPage() {
           <LabManager labs={labs} />
         </section>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-red-700">Danger zone</h2>
+        <p className="text-sm text-slate-500">
+          Clear out the sample/test appliances so you can start entering real
+          cases. Your labs and appliance types are kept.
+        </p>
+        <ClearDataPanel count={applianceCount} />
+      </section>
     </div>
   );
 }

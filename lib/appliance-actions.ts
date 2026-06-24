@@ -256,3 +256,15 @@ export async function deleteAppliance(id: string): Promise<ActionResult> {
   revalidateAll();
   return { ok: true };
 }
+
+/**
+ * Delete EVERY appliance record. Used to clear out sample/test data so the
+ * office can start entering real cases. Labs and appliance types are kept.
+ */
+export async function clearAllAppliances(): Promise<
+  ActionResult & { count?: number }
+> {
+  const { count } = await prisma.appliance.deleteMany({});
+  revalidateAll();
+  return { ok: true, count };
+}
