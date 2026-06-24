@@ -8,7 +8,6 @@ const LINKS = [
   { href: "/add", label: "Add", icon: "➕" },
   { href: "/appliances", label: "All Appliances", icon: "📋" },
   { href: "/report", label: "Report", icon: "🖨" },
-  { href: "/import", label: "Import", icon: "📥" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 

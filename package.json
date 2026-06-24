@@ -13,8 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "user:create": "tsx scripts/create-user.ts",
-    "sample:xlsx": "tsx scripts/make-sample-xlsx.ts"
+    "user:create": "tsx scripts/create-user.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

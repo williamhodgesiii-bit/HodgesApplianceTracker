@@ -3,8 +3,7 @@
 A small, production-ready web app for an orthodontic office to track appliances
 sent to outside labs and make sure each one comes back **before** the patient's
 appointment. It replaces a Google Sheets / Excel workflow with a clear,
-color-coded dashboard, fast data entry, a printable doctor report, and a
-spreadsheet importer.
+color-coded dashboard, fast data entry, and a printable doctor report.
 
 Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma**,
 and **Tailwind CSS**.
@@ -27,10 +26,6 @@ and **Tailwind CSS**.
   flagged in red.
 - **Report** — a clean, **print-friendly** view (Print → Save as PDF looks tidy)
   with lab and date-range filters and a **CSV export** for the doctor.
-- **Import** — upload the legacy `.xlsx`. Every monthly sheet is parsed, delivery
-  dates are extracted from the Notes column (`DD 7/9`, `DD7/9`, `dd 6/25`, …),
-  and anything ambiguous (e.g. a typo like `DD723`) is **flagged for review**
-  before committing.
 - **Labs are user-manageable** — add a new lab from the dropdown on the fly.
 
 ### The expected-return rule (core business logic)
@@ -85,12 +80,9 @@ npm run dev                 # http://localhost:3000
 npm test
 ```
 
-Unit tests cover the expected-return-date rule, the "DD" notes parser, status
-derivation, and the spreadsheet parser:
+Unit tests cover the expected-return-date rule and status derivation:
 - [`lib/expectedReturn.test.ts`](lib/expectedReturn.test.ts)
-- [`lib/ddParser.test.ts`](lib/ddParser.test.ts)
 - [`lib/status.test.ts`](lib/status.test.ts)
-- [`lib/import.test.ts`](lib/import.test.ts)
 
 ---
 
@@ -129,25 +121,6 @@ derivation, and the spreadsheet parser:
 
 ---
 
-## Import the spreadsheet
-
-1. Go to **Import**.
-2. Upload the office `.xlsx`. Sheets named like `June26`, `July26` are parsed
-   (one sheet per month); the year is inferred from the sheet name.
-3. Expected columns: `LAB, LAST NAME, FIRST NAME, SENT, EXPECTED, RECEIVED, Notes`.
-   Delivery dates are read from the **Notes** column (`DD 7/9`, `DD7/9`,
-   `dd 6/25`, …). Typos like `DD723` are flagged for review with a best guess.
-4. Review the preview table — amber rows need attention. Fix any field inline
-   (or uncheck a row to skip it), then click **Import**.
-
-Want a file to try it with? Generate a realistic sample:
-
-```bash
-npm run sample:xlsx        # writes sample-import.xlsx
-```
-
----
-
 ## Push to GitHub & deploy to Vercel
 
 ```bash
@@ -178,15 +151,12 @@ app/
     add/               Add Appliance
     appliances/        All Appliances (search / filter / inline edit)
     report/            Printable report + CSV export
-    import/            Spreadsheet import wizard
     settings/          Manage the appliance-type list
 components/             UI components (forms, tables, badges)
 lib/
   dates.ts             Timezone-safe calendar-date helpers
   expectedReturn.ts    The expected-return-date rule (unit tested)
-  ddParser.ts          "DD" notes parser (unit tested)
   status.ts            Derived status logic (unit tested)
-  import.ts            Workbook parsing (unit tested)
   queries.ts           Data access + serializable DTOs
   *-actions.ts         Server actions (mutations)
   prisma.ts            Prisma client singleton
@@ -195,7 +165,6 @@ prisma/
   seed.ts              Seed labs + sample appliances
 scripts/
   create-user.ts       CLI to add/update a login user (for re-enabling auth)
-  make-sample-xlsx.ts  Generate a sample import file
 ```
 
 ---
