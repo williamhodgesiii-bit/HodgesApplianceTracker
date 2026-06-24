@@ -105,7 +105,12 @@ export async function getAppliances(
   const rows = await prisma.appliance.findMany({
     where,
     include: { lab: true },
-    orderBy: [{ receivedDate: "asc" }, { expectedReturnDate: "asc" }],
+    // Outstanding (receivedDate = null) first, soonest expected at the top;
+    // already-received appliances sort to the bottom.
+    orderBy: [
+      { receivedDate: { sort: "asc", nulls: "first" } },
+      { expectedReturnDate: "asc" },
+    ],
   });
 
   let dtos = rows.map((r) => toDTO(r));
