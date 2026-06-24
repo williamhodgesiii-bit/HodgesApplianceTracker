@@ -7,7 +7,6 @@ import type { ApplianceDTO } from "@/lib/queries";
 import { formatInput } from "@/lib/dates";
 import { StatusBadge } from "./StatusBadge";
 import { ApplianceForm } from "./ApplianceForm";
-import { MarkReceived } from "./MarkReceived";
 import {
   markUnreceived,
   deleteAppliance,
@@ -230,13 +229,6 @@ function FragmentRow({
           </div>
         </td>
       </tr>
-      {!a.receivedDate && !editing && (
-        <tr>
-          <td colSpan={10} className="bg-slate-50 px-3 py-2">
-            <MarkReceived id={a.id} />
-          </td>
-        </tr>
-      )}
       {editing && (
         <tr>
           <td colSpan={10} className="bg-blue-50/50 px-4 py-4">
