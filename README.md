@@ -8,9 +8,11 @@ color-coded dashboard, fast data entry, and a printable doctor report.
 Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma**,
 and **Tailwind CSS**.
 
-> **Note:** Authentication is temporarily disabled. Every page is open — there
-> is no login screen for now. (The user model and `create-user` CLI are still
-> in place, so login can be re-added later.)
+> **Login:** The whole app is behind a shared-account login. Out of the box the
+> usernames are `hodges1`, `hodges2`, `hodges3` and the password is `appliance1`
+> (override with the `APP_USERNAMES` / `APP_PASSWORD` env vars). Set a random
+> `AUTH_SECRET` in production — see `.env.example`. Multiple people can be signed
+> in at once; pages auto-refresh every ~15s so everyone sees each other's edits.
 
 ---
 

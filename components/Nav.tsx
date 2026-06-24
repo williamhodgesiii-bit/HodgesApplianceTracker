@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { doSignOut } from "@/app/(authed)/sign-out-action";
 
 const LINKS = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -11,7 +12,7 @@ const LINKS = [
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
-export function Nav() {
+export function Nav({ userName }: { userName?: string | null }) {
   const pathname = usePathname();
 
   const isActive = (href: string) =>
@@ -47,6 +48,19 @@ export function Nav() {
             </Link>
           ))}
         </nav>
+        <div className="ml-auto flex items-center gap-3 text-sm">
+          {userName && (
+            <span className="flex items-center gap-1.5 font-medium text-slate-600">
+              <span aria-hidden>👤</span>
+              {userName}
+            </span>
+          )}
+          <form action={doSignOut}>
+            <button type="submit" className="btn-secondary px-3 py-1.5 text-sm">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   );
