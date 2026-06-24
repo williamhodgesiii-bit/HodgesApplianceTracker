@@ -129,7 +129,9 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
                 <th className="px-3 py-2">Delivery</th>
                 <th className="px-3 py-2">Received</th>
                 <th className="px-3 py-2">Notes</th>
-                <th className="px-3 py-2"></th>
+                <th className="sticky right-0 z-10 border-l border-slate-200 bg-slate-50 px-3 py-2">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -198,21 +200,24 @@ function FragmentRow({
             "—"
           )}
         </td>
-        <td className="max-w-xs px-3 py-3 text-slate-600">{a.notes || "—"}</td>
-        <td className="whitespace-nowrap px-3 py-3">
-          <div className="flex items-center gap-2">
+        <td className="max-w-[12rem] px-3 py-3 text-slate-600">
+          {a.notes || "—"}
+        </td>
+        <td className="sticky right-0 whitespace-nowrap border-l border-slate-100 bg-white px-3 py-3">
+          <div className="flex items-center justify-end gap-2">
             <button className="btn-secondary px-2 py-1 text-xs" onClick={onEdit}>
               Edit
             </button>
             {a.receivedDate ? (
               <button
                 className="btn-secondary px-2 py-1 text-xs"
+                title="Undo receive"
                 onClick={async () => {
                   await markUnreceived(a.id);
                   onRefresh();
                 }}
               >
-                Undo receive
+                Undo
               </button>
             ) : null}
             <button
