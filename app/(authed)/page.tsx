@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getDashboardData, getReceivedRecentCount } from "@/lib/queries";
-import { DashboardSection } from "@/components/DashboardSection";
+import { getDashboardData, getReceivedRecentCount, getLabs } from "@/lib/queries";
+import { DashboardClient } from "@/components/DashboardClient";
 import { formatDisplayWithYear, today } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +27,12 @@ function KpiCard({
 }
 
 export default async function DashboardPage() {
-  const [{ overdue, dueSoon, onTrack }, receivedThisWeek] = await Promise.all([
-    getDashboardData(),
-    getReceivedRecentCount(7),
-  ]);
+  const [{ overdue, dueSoon, onTrack }, receivedThisWeek, labs] =
+    await Promise.all([
+      getDashboardData(),
+      getReceivedRecentCount(7),
+      getLabs(),
+    ]);
   const totalOutstanding = overdue.length + dueSoon.length + onTrack.length;
 
   return (
@@ -97,33 +99,12 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
-          <DashboardSection
-            title="Overdue"
-            emoji="🔴"
-            accent="border-red-200 bg-red-50 text-red-900"
-            rowAccent="border-l-4 border-l-red-400"
-            appliances={overdue}
-            emptyText="Nothing overdue. 🎉"
-            showOverdue
-          />
-          <DashboardSection
-            title="Due Soon"
-            emoji="🟡"
-            accent="border-amber-200 bg-amber-50 text-amber-900"
-            rowAccent="border-l-4 border-l-amber-300"
-            appliances={dueSoon}
-            emptyText="Nothing due in the next 3 business days."
-          />
-          <DashboardSection
-            title="On Track"
-            emoji="🟢"
-            accent="border-emerald-200 bg-emerald-50 text-emerald-900"
-            rowAccent="border-l-4 border-l-emerald-300"
-            appliances={onTrack}
-            emptyText="Nothing further out right now."
-          />
-        </div>
+        <DashboardClient
+          overdue={overdue}
+          dueSoon={dueSoon}
+          onTrack={onTrack}
+          labs={labs}
+        />
       )}
     </div>
   );
