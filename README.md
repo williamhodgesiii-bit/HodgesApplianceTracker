@@ -13,6 +13,7 @@ and **Tailwind CSS**.
 > (override with the `APP_USERNAMES` / `APP_PASSWORD` env vars). Set a random
 > `AUTH_SECRET` in production — see `.env.example`. Multiple people can be signed
 > in at once; pages auto-refresh every ~15s so everyone sees each other's edits.
+> Sessions auto-log-out after 12 hours of inactivity.
 
 ---
 

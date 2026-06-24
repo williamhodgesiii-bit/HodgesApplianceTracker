@@ -32,9 +32,20 @@ function safeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
+/** Auto sign-out after this much inactivity. Shared with the client watcher. */
+export const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60; // 12 hours
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    // Rolling 12-hour window: the session expires 12h after the last request,
+    // so it ends after 12 hours of inactivity (e.g. the browser was closed).
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    // Refresh the session cookie at most this often while someone is active,
+    // which keeps the rolling window moving without rewriting it every request.
+    updateAge: 30 * 60, // 30 minutes
+  },
   pages: {
     signIn: "/login",
   },
