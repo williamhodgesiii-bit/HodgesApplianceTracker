@@ -134,11 +134,36 @@ git push origin main         # or your branch
 2. Add the environment variables in **Project Settings → Environment Variables**:
    - `DATABASE_URL` (added automatically if you create the Neon DB via Vercel Storage)
 3. **Deploy.** The build runs `prisma generate && next build` (see `package.json`).
-4. After the first deploy, apply the schema to the production database:
+4. Apply the schema to the production database (run once now, and again
+   whenever `prisma/schema.prisma` changes):
    ```bash
    npx prisma migrate deploy
    ```
-   (run locally against the production `DATABASE_URL`, or as a one-off command).
+   Run this locally against the production database. Use Neon's **direct**
+   (non-pooled) connection string for migrations — pooled connections can't
+   hold the advisory lock Prisma needs and will time out (error `P1002`).
+
+> **Why migrations aren't part of the build:** `npm run build` is only
+> `prisma generate && next build`. Running `prisma migrate deploy` inside the
+> Vercel build is unreliable — parallel build steps compete for Prisma's
+> migration advisory lock and time out (`P1002`). Keep migrations a separate,
+> deliberate step you run against the direct connection.
+
+---
+
+## Going live: clear the sample data
+
+The seed (`npm run db:seed`) inserts ~10 sample appliances so you can see the
+dashboard in action. Deploys do **not** seed automatically, so once you start
+entering real cases they're safe. When you're ready to switch from the demo to
+real data, wipe the samples once:
+
+```bash
+npm run db:clear-samples     # deletes all appliances; keeps labs + appliance types
+```
+
+(Or paste [`scripts/reset-appliances.sql`](scripts/reset-appliances.sql) into
+the Neon SQL editor.) After that, add real appliances through the **Add** page.
 
 ---
 
@@ -164,6 +189,8 @@ prisma/
   schema.prisma        users, labs, appliances
   seed.ts              Seed labs + sample appliances
 scripts/
+  clear-samples.ts     Delete sample appliances to start with real data
+  reset-appliances.sql Same, as SQL for the Neon editor
   create-user.ts       CLI to add/update a login user (for re-enabling auth)
 ```
 
