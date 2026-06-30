@@ -7,6 +7,7 @@ import type { ApplianceStatus } from "@/lib/status";
 import { DashboardSection } from "./DashboardSection";
 
 interface Props {
+  incomplete: ApplianceDTO[];
   overdue: ApplianceDTO[];
   dueSoon: ApplianceDTO[];
   onTrack: ApplianceDTO[];
@@ -15,12 +16,19 @@ interface Props {
 
 const STATUS_OPTIONS = [
   { value: "ALL", label: "All statuses" },
+  { value: "INCOMPLETE", label: "📝 Incomplete" },
   { value: "OVERDUE", label: "🔴 Overdue" },
   { value: "DUE_SOON", label: "🟡 Due Soon" },
   { value: "ON_TRACK", label: "🟢 On Track" },
 ];
 
-export function DashboardClient({ overdue, dueSoon, onTrack, labs }: Props) {
+export function DashboardClient({
+  incomplete,
+  overdue,
+  dueSoon,
+  onTrack,
+  labs,
+}: Props) {
   const [q, setQ] = useState("");
   const [labId, setLabId] = useState("");
   const [status, setStatus] = useState<ApplianceStatus | "ALL">("ALL");
@@ -45,19 +53,28 @@ export function DashboardClient({ overdue, dueSoon, onTrack, labs }: Props) {
       if (labId && a.labId !== labId) return false;
       if (status !== "ALL" && a.status !== status) return false;
       // dateSent is YYYY-MM-DD, so lexical comparison is chronological.
-      if (from && a.dateSent < from) return false;
-      if (to && a.dateSent > to) return false;
+      // Incomplete entries may have no sent date — exclude them when a
+      // sent-date range is in play.
+      if (from && (!a.dateSent || a.dateSent < from)) return false;
+      if (to && (!a.dateSent || a.dateSent > to)) return false;
       return true;
     };
   }, [q, labId, status, from, to]);
 
+  const filteredIncomplete = useMemo(
+    () => incomplete.filter(matches),
+    [incomplete, matches]
+  );
   const filteredOverdue = useMemo(() => overdue.filter(matches), [overdue, matches]);
   const filteredDueSoon = useMemo(() => dueSoon.filter(matches), [dueSoon, matches]);
   const filteredOnTrack = useMemo(() => onTrack.filter(matches), [onTrack, matches]);
 
   const filtersActive = Boolean(q || labId || status !== "ALL" || from || to);
   const visibleTotal =
-    filteredOverdue.length + filteredDueSoon.length + filteredOnTrack.length;
+    filteredIncomplete.length +
+    filteredOverdue.length +
+    filteredDueSoon.length +
+    filteredOnTrack.length;
 
   const clearFilters = () => {
     setQ("");
@@ -146,6 +163,22 @@ export function DashboardClient({ overdue, dueSoon, onTrack, labs }: Props) {
       )}
 
       <div className="space-y-6">
+        {/* Incomplete entries first so they're not forgotten. Only shown when
+            present (or when the Incomplete filter is explicitly selected). */}
+        {(filteredIncomplete.length > 0 || status === "INCOMPLETE") && (
+          <DashboardSection
+            title="Incomplete"
+            emoji="📝"
+            accent="border-indigo-200 bg-indigo-50 text-indigo-900"
+            rowAccent="border-l-4 border-l-indigo-400"
+            appliances={filteredIncomplete}
+            emptyText={
+              filtersActive
+                ? "No incomplete entries match these filters."
+                : "No incomplete entries."
+            }
+          />
+        )}
         <DashboardSection
           title="Overdue"
           emoji="🔴"

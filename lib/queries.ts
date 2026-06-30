@@ -16,9 +16,10 @@ export interface ApplianceDTO {
   labId: string;
   labName: string;
   applianceType: string;
-  dateSent: string;
-  deliveryDate: string;
-  expectedReturnDate: string;
+  // Null when not yet known — these power the INCOMPLETE status.
+  dateSent: string | null;
+  deliveryDate: string | null;
+  expectedReturnDate: string | null;
   receivedDate: string | null;
   notes: string;
   status: ApplianceStatus;
@@ -36,13 +37,19 @@ export function toDTO(a: ApplianceWithLab, now = new Date()): ApplianceDTO {
     labId: a.labId,
     labName: a.lab.name,
     applianceType: a.applianceType,
-    dateSent: toDateInputValue(a.dateSent),
-    deliveryDate: toDateInputValue(a.deliveryDate),
-    expectedReturnDate: toDateInputValue(a.expectedReturnDate),
+    dateSent: a.dateSent ? toDateInputValue(a.dateSent) : null,
+    deliveryDate: a.deliveryDate ? toDateInputValue(a.deliveryDate) : null,
+    expectedReturnDate: a.expectedReturnDate
+      ? toDateInputValue(a.expectedReturnDate)
+      : null,
     receivedDate: a.receivedDate ? toDateInputValue(a.receivedDate) : null,
     notes: a.notes,
     status: deriveStatus(
-      { expectedReturnDate: a.expectedReturnDate, receivedDate: a.receivedDate },
+      {
+        dateSent: a.dateSent,
+        expectedReturnDate: a.expectedReturnDate,
+        receivedDate: a.receivedDate,
+      },
       now
     ),
     daysOverdue: a.receivedDate ? 0 : daysOverdue(a.expectedReturnDate, now),
@@ -51,9 +58,18 @@ export function toDTO(a: ApplianceWithLab, now = new Date()): ApplianceDTO {
 }
 
 export interface DashboardData {
+  incomplete: ApplianceDTO[];
   overdue: ApplianceDTO[];
   dueSoon: ApplianceDTO[];
   onTrack: ApplianceDTO[];
+}
+
+/** Stable name sort (last, first) used for the order-less Incomplete bucket. */
+function byPatientName(a: ApplianceDTO, b: ApplianceDTO): number {
+  return (
+    a.patientLastName.localeCompare(b.patientLastName) ||
+    a.patientFirstName.localeCompare(b.patientFirstName)
+  );
 }
 
 /** Outstanding (not-yet-received) appliances, grouped by derived status. */
@@ -66,6 +82,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const dtos = rows.map((r) => toDTO(r));
   return {
+    incomplete: dtos.filter((d) => d.status === "INCOMPLETE").sort(byPatientName),
     overdue: dtos
       .filter((d) => d.status === "OVERDUE")
       .sort((a, b) => b.daysOverdue - a.daysOverdue),
@@ -77,7 +94,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 export interface ApplianceFilters {
   q?: string;
   labId?: string;
-  status?: ApplianceStatus | "ALL" | "OUTSTANDING";
+  status?: ApplianceStatus | "ALL" | "OUTSTANDING"; // "OUTSTANDING" = not received (incl. incomplete)
   from?: string; // sent-date range start (YYYY-MM-DD)
   to?: string; // sent-date range end
 }
@@ -133,6 +150,7 @@ export async function getReportData(
 ): Promise<DashboardData> {
   const dtos = await getAppliances({ ...filters, status: "OUTSTANDING" });
   return {
+    incomplete: dtos.filter((d) => d.status === "INCOMPLETE").sort(byPatientName),
     overdue: dtos
       .filter((d) => d.status === "OVERDUE")
       .sort((a, b) => b.daysOverdue - a.daysOverdue),

@@ -193,32 +193,37 @@ export function ApplianceForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="dateSent">
-            Date sent
+            Date sent <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <input
             id="dateSent"
             name="dateSent"
             type="date"
             className="input"
-            required
-            defaultValue={initial?.dateSent ?? todayValue()}
+            defaultValue={initial ? initial.dateSent ?? "" : todayValue()}
           />
         </div>
         <div>
           <label className="label" htmlFor="deliveryDate">
-            Delivery date (DD — patient&apos;s appointment)
+            Delivery date (DD — patient&apos;s appointment){" "}
+            <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <input
             id="deliveryDate"
             name="deliveryDate"
             type="date"
             className="input"
-            required
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
           />
         </div>
       </div>
+
+      <p className="text-xs text-slate-500">
+        Leave a date blank if you don&apos;t have it yet — the case is saved as{" "}
+        <span className="font-semibold text-indigo-700">📝 Incomplete</span> and
+        shown at the top of the dashboard until it&apos;s filled in.
+      </p>
 
       {/* Expected return — auto-filled (4 days before delivery), fully editable */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">

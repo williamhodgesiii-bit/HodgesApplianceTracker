@@ -21,6 +21,7 @@ interface Props {
 const STATUS_OPTIONS = [
   { value: "ALL", label: "All statuses" },
   { value: "OUTSTANDING", label: "Outstanding (not received)" },
+  { value: "INCOMPLETE", label: "📝 Incomplete" },
   { value: "OVERDUE", label: "🔴 Overdue" },
   { value: "DUE_SOON", label: "🟡 Due Soon" },
   { value: "ON_TRACK", label: "🟢 On Track" },

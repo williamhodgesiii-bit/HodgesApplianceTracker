@@ -27,13 +27,14 @@ function KpiCard({
 }
 
 export default async function DashboardPage() {
-  const [{ overdue, dueSoon, onTrack }, receivedThisWeek, labs] =
+  const [{ incomplete, overdue, dueSoon, onTrack }, receivedThisWeek, labs] =
     await Promise.all([
       getDashboardData(),
       getReceivedRecentCount(7),
       getLabs(),
     ]);
-  const totalOutstanding = overdue.length + dueSoon.length + onTrack.length;
+  const atLab = overdue.length + dueSoon.length + onTrack.length;
+  const totalOutstanding = atLab + incomplete.length;
 
   return (
     <div className="space-y-6">
@@ -42,10 +43,17 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-slate-500">
             {formatDisplayWithYear(today())} ·{" "}
-            <span className="font-semibold text-slate-700">
-              {totalOutstanding}
-            </span>{" "}
-            appliance{totalOutstanding === 1 ? "" : "s"} out at the lab
+            <span className="font-semibold text-slate-700">{atLab}</span>{" "}
+            appliance{atLab === 1 ? "" : "s"} out at the lab
+            {incomplete.length > 0 && (
+              <>
+                {" · "}
+                <span className="font-semibold text-indigo-700">
+                  {incomplete.length}
+                </span>{" "}
+                incomplete
+              </>
+            )}
           </p>
         </div>
         <Link href="/add" className="btn-primary no-print">
@@ -54,7 +62,14 @@ export default async function DashboardPage() {
       </div>
 
       {/* At-a-glance KPI cards (click to drill in) */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiCard
+          href="/appliances?status=INCOMPLETE"
+          value={incomplete.length}
+          label="Incomplete"
+          accent="text-indigo-600"
+          ring="border-indigo-200"
+        />
         <KpiCard
           href="/appliances?status=OVERDUE"
           value={overdue.length}
@@ -100,6 +115,7 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <DashboardClient
+          incomplete={incomplete}
           overdue={overdue}
           dueSoon={dueSoon}
           onTrack={onTrack}

@@ -52,9 +52,12 @@ model Appliance {
   labId              String    @map("lab_id")
   lab                Lab       @relation(fields: [labId], references: [id])
   applianceType      String    @map("appliance_type")
-  dateSent           DateTime  @map("date_sent") @db.Date
-  deliveryDate       DateTime  @map("delivery_date") @db.Date
-  expectedReturnDate DateTime  @map("expected_return_date") @db.Date
+  // Sent / delivery / expected-return dates are optional so a case can be
+  // recorded before they're known (e.g. no delivery date yet, or made but not
+  // yet paid/sent). Such records derive an INCOMPLETE status. See lib/status.ts.
+  dateSent           DateTime? @map("date_sent") @db.Date
+  deliveryDate       DateTime? @map("delivery_date") @db.Date
+  expectedReturnDate DateTime? @map("expected_return_date") @db.Date
   receivedDate       DateTime? @map("received_date") @db.Date
   notes              String    @default("")
   createdAt          DateTime  @default(now()) @map("created_at")

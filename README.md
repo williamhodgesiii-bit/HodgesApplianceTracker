@@ -19,8 +19,14 @@ and **Tailwind CSS**.
 
 ## Features
 
-- **Dashboard** — the "clear-cut report": 🔴 Overdue, 🟡 Due Soon, 🟢 On Track,
-  each with one-click **Mark Received**. Today's date is always shown.
+- **Dashboard** — the "clear-cut report": 📝 Incomplete, 🔴 Overdue, 🟡 Due Soon,
+  🟢 On Track, each with one-click **Mark Received**. Today's date is always shown.
+- **Incomplete entries** — record a case before you have all the details. The
+  sent and delivery dates are **optional**; leave them blank and the case is
+  saved as 📝 **Incomplete** and surfaced at the top of the dashboard (and in the
+  report) until it's filled in. Useful for an appliance with no delivery date
+  yet, or one that's made but not yet paid for / sent. Patient, lab, and
+  appliance type are still required.
 - **Add Appliance** — fast, keyboard-friendly entry. The **expected return date
   fills in live** as you pick the delivery date, with a note explaining the rule
   applied (e.g. _"rolled back from Sunday to Friday"_). Override it if needed.
@@ -42,8 +48,10 @@ delivery date, and can be **manually entered or adjusted** on any case (a
 "Reset to auto" link puts it back to the default).
 
 This lives in [`lib/expectedReturn.ts`](lib/expectedReturn.ts) as a pure,
-unit-tested function. Status (Overdue / Due Soon / On Track) is **always derived
-from dates, never stored** ([`lib/status.ts`](lib/status.ts)).
+unit-tested function. Status (Incomplete / Overdue / Due Soon / On Track /
+Received) is **always derived from dates, never stored**
+([`lib/status.ts`](lib/status.ts)). A not-yet-received case missing its sent or
+expected-return date derives **Incomplete**.
 
 Appliance types are a managed list (Settings → Appliance types) that powers the
 picker on the Add/Edit form; you can also add a new type inline while entering a
@@ -206,6 +214,10 @@ scripts/
   always displayed with the weekday, e.g. **"Mon, Jul 7"**, because the day of
   the week matters a lot in this workflow.
 - **Status is derived, never stored**, so it's always correct relative to today.
+- **Incomplete entries are allowed**: the sent, delivery, and expected-return
+  dates are nullable so a case can be entered before they're known. Such records
+  derive an **Incomplete** status and are listed first on the dashboard so they
+  aren't forgotten.
 - **Soft validations warn, don't block**: a delivery date before the sent date, a
   received date before sent, or a duplicate patient name all surface a warning but
   still let you save.

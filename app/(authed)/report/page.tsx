@@ -11,15 +11,17 @@ import type { ApplianceDTO } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 function SummaryBand({
+  incomplete,
   overdue,
   dueSoon,
   onTrack,
 }: {
+  incomplete: number;
   overdue: number;
   dueSoon: number;
   onTrack: number;
 }) {
-  const total = overdue + dueSoon + onTrack;
+  const total = incomplete + overdue + dueSoon + onTrack;
   const cell = (value: number, label: string, color: string) => (
     <div className="flex flex-col px-4 py-3">
       <span className={`text-2xl font-bold leading-none ${color}`}>{value}</span>
@@ -29,8 +31,9 @@ function SummaryBand({
     </div>
   );
   return (
-    <div className="print-full card grid grid-cols-2 divide-x divide-slate-100 sm:grid-cols-4">
+    <div className="print-full card grid grid-cols-2 divide-x divide-slate-100 sm:grid-cols-5">
       {cell(total, "Outstanding", "text-slate-900")}
+      {cell(incomplete, "Incomplete", "text-indigo-600")}
       {cell(overdue, "Overdue", "text-red-600")}
       {cell(dueSoon, "Due soon", "text-amber-600")}
       {cell(onTrack, "On track", "text-emerald-600")}
@@ -41,13 +44,20 @@ function SummaryBand({
 function LabBreakdown({ rows }: { rows: ApplianceDTO[] }) {
   const byLab = new Map<
     string,
-    { overdue: number; dueSoon: number; onTrack: number; total: number }
+    {
+      incomplete: number;
+      overdue: number;
+      dueSoon: number;
+      onTrack: number;
+      total: number;
+    }
   >();
   for (const r of rows) {
     const e =
       byLab.get(r.labName) ??
-      { overdue: 0, dueSoon: 0, onTrack: 0, total: 0 };
-    if (r.status === "OVERDUE") e.overdue++;
+      { incomplete: 0, overdue: 0, dueSoon: 0, onTrack: 0, total: 0 };
+    if (r.status === "INCOMPLETE") e.incomplete++;
+    else if (r.status === "OVERDUE") e.overdue++;
     else if (r.status === "DUE_SOON") e.dueSoon++;
     else if (r.status === "ON_TRACK") e.onTrack++;
     e.total++;
@@ -68,6 +78,7 @@ function LabBreakdown({ rows }: { rows: ApplianceDTO[] }) {
         <thead>
           <tr>
             <th className="th">Lab</th>
+            <th className="th text-right">Incomplete</th>
             <th className="th text-right">Overdue</th>
             <th className="th text-right">Due soon</th>
             <th className="th text-right">On track</th>
@@ -78,6 +89,9 @@ function LabBreakdown({ rows }: { rows: ApplianceDTO[] }) {
           {labs.map(([name, c]) => (
             <tr key={name}>
               <td className="td font-medium">{name}</td>
+              <td className="td text-right text-indigo-700">
+                {c.incomplete || "—"}
+              </td>
               <td className="td text-right font-semibold text-red-700">
                 {c.overdue || "—"}
               </td>
@@ -175,11 +189,11 @@ export default async function ReportPage({
     to: sp.to,
   };
 
-  const [{ overdue, dueSoon, onTrack }, labs] = await Promise.all([
+  const [{ incomplete, overdue, dueSoon, onTrack }, labs] = await Promise.all([
     getReportData(filters),
     getLabs(),
   ]);
-  const all = [...overdue, ...dueSoon, ...onTrack];
+  const all = [...incomplete, ...overdue, ...dueSoon, ...onTrack];
   const selectedLab = labs.find((l) => l.id === sp.labId);
 
   return (
@@ -195,6 +209,7 @@ export default async function ReportPage({
       <ReportToolbar labs={labs} rows={all} />
 
       <SummaryBand
+        incomplete={incomplete.length}
         overdue={overdue.length}
         dueSoon={dueSoon.length}
         onTrack={onTrack.length}
@@ -203,6 +218,9 @@ export default async function ReportPage({
       <LabBreakdown rows={all} />
 
       <div className="space-y-5">
+        {incomplete.length > 0 && (
+          <ReportTable title="Incomplete" emoji="📝" rows={incomplete} />
+        )}
         <ReportTable title="Overdue" emoji="🔴" rows={overdue} showOverdue />
         <ReportTable title="Due Soon" emoji="🟡" rows={dueSoon} />
         <ReportTable title="On Track" emoji="🟢" rows={onTrack} />
