@@ -174,27 +174,28 @@ export function ApplianceForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="dateSent">
-            Date sent
+            Date sent <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <input
             id="dateSent"
             name="dateSent"
             type="date"
             className="input"
-            required
-            defaultValue={initial?.dateSent ?? todayValue()}
+            defaultValue={
+              initial?.dateSent ?? (mode === "create" ? todayValue() : "")
+            }
           />
         </div>
         <div>
           <label className="label" htmlFor="deliveryDate">
-            Delivery date (DD — patient&apos;s appointment)
+            Delivery date (DD — patient&apos;s appointment){" "}
+            <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <input
             id="deliveryDate"
             name="deliveryDate"
             type="date"
             className="input"
-            required
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
           />
@@ -202,7 +203,13 @@ export function ApplianceForm({
       </div>
 
       {/* Live expected-return preview */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+      <div
+        className={`rounded-lg border p-3 ${
+          deliveryDate || overrideExpected
+            ? "border-blue-200 bg-blue-50"
+            : "border-orange-200 bg-orange-50"
+        }`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <span className="text-sm font-medium text-slate-600">
@@ -228,6 +235,13 @@ export function ApplianceForm({
         </div>
         {computed && !overrideExpected && (
           <p className="mt-1 text-sm text-slate-500">{computed.explanation}</p>
+        )}
+        {!deliveryDate && !overrideExpected && (
+          <p className="mt-1 text-sm text-orange-700">
+            🟠 No delivery date yet — this will be saved as{" "}
+            <strong>Incomplete</strong> and pinned to the top of the dashboard
+            until you add one.
+          </p>
         )}
         {overrideExpected && (
           <input

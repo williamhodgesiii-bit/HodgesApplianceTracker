@@ -24,8 +24,9 @@ const applianceSchema = z.object({
   patientLastName: z.string().trim().min(1, "Last name is required"),
   labId: z.string().min(1, "Lab is required"),
   applianceType: z.string().trim().min(1, "Appliance type is required"),
-  dateSent: z.string().min(1, "Sent date is required"),
-  deliveryDate: z.string().min(1, "Delivery date is required"),
+  // Dates are optional so partial ("incomplete") entries can be saved.
+  dateSent: z.string().optional(),
+  deliveryDate: z.string().optional(),
   // Optional manual override of the expected return date.
   expectedReturnDate: z.string().optional(),
   receivedDate: z.string().optional(),
@@ -87,21 +88,27 @@ export async function createAppliance(
   }
   const data = parsed.data;
 
-  const dateSent = parseDateInput(data.dateSent);
-  const deliveryDate = parseDateInput(data.deliveryDate);
+  const dateSent = data.dateSent ? parseDateInput(data.dateSent) : null;
+  const deliveryDate = data.deliveryDate
+    ? parseDateInput(data.deliveryDate)
+    : null;
+  // Expected return is derived from the delivery date (or a manual override).
+  // With no delivery date there is no expected return — the entry is INCOMPLETE.
   const expected = data.expectedReturnDate
     ? parseDateInput(data.expectedReturnDate)
-    : expectedReturnDate(deliveryDate);
+    : deliveryDate
+    ? expectedReturnDate(deliveryDate)
+    : null;
   const receivedDate = data.receivedDate
     ? parseDateInput(data.receivedDate)
     : null;
 
   // Soft validations — warn but don't block.
   const warnings: string[] = [];
-  if (deliveryDate.getTime() < dateSent.getTime()) {
+  if (deliveryDate && dateSent && deliveryDate.getTime() < dateSent.getTime()) {
     warnings.push("Delivery date is before the sent date.");
   }
-  if (receivedDate && receivedDate.getTime() < dateSent.getTime()) {
+  if (receivedDate && dateSent && receivedDate.getTime() < dateSent.getTime()) {
     warnings.push("Received date is before the sent date.");
   }
   const dup = await prisma.appliance.findFirst({
@@ -166,10 +173,14 @@ export async function updateAppliance(
   }
   const data = parsed.data;
 
-  const deliveryDate = parseDateInput(data.deliveryDate);
+  const deliveryDate = data.deliveryDate
+    ? parseDateInput(data.deliveryDate)
+    : null;
   const expected = data.expectedReturnDate
     ? parseDateInput(data.expectedReturnDate)
-    : expectedReturnDate(deliveryDate);
+    : deliveryDate
+    ? expectedReturnDate(deliveryDate)
+    : null;
 
   await prisma.appliance.update({
     where: { id },
@@ -178,7 +189,7 @@ export async function updateAppliance(
       patientLastName: data.patientLastName,
       labId: data.labId,
       applianceType: data.applianceType,
-      dateSent: parseDateInput(data.dateSent),
+      dateSent: data.dateSent ? parseDateInput(data.dateSent) : null,
       deliveryDate,
       expectedReturnDate: expected,
       receivedDate: data.receivedDate

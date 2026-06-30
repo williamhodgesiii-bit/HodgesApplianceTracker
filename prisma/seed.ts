@@ -57,14 +57,37 @@ async function main() {
     last: string;
     lab: string;
     type: string;
-    sentDaysAgo: number;
+    sentDaysAgo: number | null;
     deliveryInDays: number;
     receivedDaysAgo?: number | null;
     notes?: string;
     expectedOverride?: Date;
+    /** Partial entry: no delivery date yet → derives as INCOMPLETE. */
+    incomplete?: boolean;
   };
 
   const samples: SampleInput[] = [
+    // INCOMPLETE (entered before all the info is known)
+    {
+      first: "Mia",
+      last: "Anderson",
+      lab: "AOA",
+      type: "Expander",
+      sentDaysAgo: 2,
+      deliveryInDays: 0,
+      notes: "Sent to lab; appointment not scheduled yet — no delivery date.",
+      incomplete: true,
+    },
+    {
+      first: "Ethan",
+      last: "Thomas",
+      lab: "Vivera",
+      type: "Retainer",
+      sentDaysAgo: null,
+      deliveryInDays: 0,
+      notes: "Ready to send off — waiting on patient payment.",
+      incomplete: true,
+    },
     // OVERDUE (expected in the past, not received)
     {
       first: "Olivia",
@@ -175,15 +198,17 @@ async function main() {
   ];
 
   for (const s of samples) {
-    const deliveryDate = deliveryInDays(s.deliveryInDays);
-    const expected = s.expectedOverride ?? expectedReturnDate(deliveryDate);
+    const deliveryDate = s.incomplete ? null : deliveryInDays(s.deliveryInDays);
+    const expected = s.incomplete
+      ? null
+      : s.expectedOverride ?? expectedReturnDate(deliveryDate!);
     await prisma.appliance.create({
       data: {
         patientFirstName: s.first,
         patientLastName: s.last,
         labId: labs[s.lab],
         applianceType: s.type,
-        dateSent: addDays(today, -s.sentDaysAgo),
+        dateSent: s.sentDaysAgo != null ? addDays(today, -s.sentDaysAgo) : null,
         deliveryDate,
         expectedReturnDate: expected,
         receivedDate:

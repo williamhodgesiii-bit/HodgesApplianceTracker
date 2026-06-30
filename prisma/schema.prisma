@@ -38,9 +38,12 @@ model Appliance {
   labId              String    @map("lab_id")
   lab                Lab       @relation(fields: [labId], references: [id])
   applianceType      String    @map("appliance_type")
-  dateSent           DateTime  @map("date_sent") @db.Date
-  deliveryDate       DateTime  @map("delivery_date") @db.Date
-  expectedReturnDate DateTime  @map("expected_return_date") @db.Date
+  // Dates are optional so partial ("incomplete") entries can be saved: an
+  // appliance with no delivery date (and therefore no expected return) is
+  // tracked as INCOMPLETE until the missing info is filled in.
+  dateSent           DateTime? @map("date_sent") @db.Date
+  deliveryDate       DateTime? @map("delivery_date") @db.Date
+  expectedReturnDate DateTime? @map("expected_return_date") @db.Date
   receivedDate       DateTime? @map("received_date") @db.Date
   notes              String    @default("")
   createdAt          DateTime  @default(now()) @map("created_at")

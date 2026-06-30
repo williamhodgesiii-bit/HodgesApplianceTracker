@@ -81,11 +81,11 @@ export default async function ReportPage({
     to: sp.to,
   };
 
-  const [{ overdue, dueSoon, onTrack }, labs] = await Promise.all([
+  const [{ incomplete, overdue, dueSoon, onTrack }, labs] = await Promise.all([
     getReportData(filters),
     getLabs(),
   ]);
-  const all = [...overdue, ...dueSoon, ...onTrack];
+  const all = [...incomplete, ...overdue, ...dueSoon, ...onTrack];
   const selectedLab = labs.find((l) => l.id === sp.labId);
 
   return (
@@ -101,6 +101,7 @@ export default async function ReportPage({
       <ReportToolbar labs={labs} rows={all} />
 
       <div className="space-y-5">
+        <ReportTable title="Incomplete" emoji="🟠" rows={incomplete} />
         <ReportTable title="Overdue" emoji="🔴" rows={overdue} showOverdue />
         <ReportTable title="Due Soon" emoji="🟡" rows={dueSoon} />
         <ReportTable title="On Track" emoji="🟢" rows={onTrack} />

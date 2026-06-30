@@ -6,8 +6,9 @@ import { formatDisplayWithYear, today } from "@/lib/dates";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { overdue, dueSoon, onTrack } = await getDashboardData();
-  const total = overdue.length + dueSoon.length + onTrack.length;
+  const { incomplete, overdue, dueSoon, onTrack } = await getDashboardData();
+  const total =
+    incomplete.length + overdue.length + dueSoon.length + onTrack.length;
 
   return (
     <div className="space-y-6">
@@ -41,6 +42,13 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <DashboardSection
+            title="Incomplete"
+            emoji="🟠"
+            accent="border-orange-200 bg-orange-50 text-orange-900"
+            appliances={incomplete}
+            emptyText="No incomplete entries — every appliance has its dates."
+          />
           <DashboardSection
             title="Overdue"
             emoji="🔴"

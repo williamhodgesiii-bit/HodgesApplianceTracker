@@ -19,6 +19,20 @@ describe("deriveStatus", () => {
     ).toBe("RECEIVED");
   });
 
+  it("INCOMPLETE when there is no expected return date and not received", () => {
+    expect(deriveStatus({ expectedReturnDate: null }, NOW)).toBe("INCOMPLETE");
+    expect(deriveStatus({}, NOW)).toBe("INCOMPLETE");
+  });
+
+  it("RECEIVED takes precedence even without an expected return date", () => {
+    expect(
+      deriveStatus(
+        { expectedReturnDate: null, receivedDate: utcDate(2026, 7, 1) },
+        NOW
+      )
+    ).toBe("RECEIVED");
+  });
+
   it("OVERDUE when expected < today and not received", () => {
     expect(
       deriveStatus({ expectedReturnDate: utcDate(2026, 7, 7) }, NOW)
@@ -51,6 +65,9 @@ describe("daysOverdue", () => {
   });
   it("is 0 when not overdue", () => {
     expect(daysOverdue(utcDate(2026, 7, 20), NOW)).toBe(0);
+  });
+  it("is 0 when there is no expected return date", () => {
+    expect(daysOverdue(null, NOW)).toBe(0);
   });
 });
 

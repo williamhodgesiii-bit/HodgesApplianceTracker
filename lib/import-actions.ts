@@ -59,23 +59,22 @@ export async function commitImport(rows: ImportRow[]): Promise<CommitResult> {
       skipped += 1;
       continue;
     }
-    // Required fields must be present to commit.
-    if (
-      !row.lab.trim() ||
-      !row.firstName.trim() ||
-      !row.lastName.trim() ||
-      !row.dateSent ||
-      !row.deliveryDate
-    ) {
+    // Only identity is required to commit. Missing dates are allowed — the row
+    // imports as an INCOMPLETE entry that can be completed later.
+    if (!row.lab.trim() || !row.firstName.trim() || !row.lastName.trim()) {
       skipped += 1;
       continue;
     }
 
     const labId = await ensureLab(row.lab);
-    const deliveryDate = parseDateInput(row.deliveryDate);
-    const expected = row.expectedReturnDate
-      ? parseDateInput(row.expectedReturnDate)
-      : expectedReturnDate(deliveryDate);
+    const deliveryDate = row.deliveryDate
+      ? parseDateInput(row.deliveryDate)
+      : null;
+    const expected = deliveryDate
+      ? row.expectedReturnDate
+        ? parseDateInput(row.expectedReturnDate)
+        : expectedReturnDate(deliveryDate)
+      : null;
 
     await prisma.appliance.create({
       data: {
@@ -83,7 +82,7 @@ export async function commitImport(rows: ImportRow[]): Promise<CommitResult> {
         patientLastName: row.lastName.trim(),
         labId,
         applianceType: row.applianceType?.trim() || "(imported)",
-        dateSent: parseDateInput(row.dateSent),
+        dateSent: row.dateSent ? parseDateInput(row.dateSent) : null,
         deliveryDate,
         expectedReturnDate: expected,
         receivedDate: row.receivedDate

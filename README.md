@@ -13,11 +13,17 @@ Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma*
 
 ## Features
 
-- **Dashboard** — the "clear-cut report": 🔴 Overdue, 🟡 Due Soon, 🟢 On Track,
-  each with one-click **Mark Received**. Today's date is always shown.
-- **Add Appliance** — fast, keyboard-friendly entry. The **expected return date
-  fills in live** as you pick the delivery date, with a note explaining the rule
-  applied (e.g. _"rolled back from Sunday to Friday"_). Override it if needed.
+- **Dashboard** — the "clear-cut report": 🟠 Incomplete, 🔴 Overdue, 🟡 Due Soon,
+  🟢 On Track, each with one-click **Mark Received**. Today's date is always shown.
+- **Incomplete entries** — you don't need every detail to save a record. Enter
+  an appliance now and leave the **delivery date blank** (e.g. the appointment
+  isn't scheduled yet, or it's ready to ship but the patient hasn't paid). It's
+  saved as 🟠 **Incomplete** and pinned to the top of the dashboard and report
+  so it stays pertinent until you fill in the date.
+- **Add Appliance** — fast, keyboard-friendly entry. Sent and delivery dates are
+  optional. The **expected return date fills in live** as you pick the delivery
+  date, with a note explaining the rule applied (e.g. _"rolled back from Sunday
+  to Friday"_). Override it if needed.
 - **All Appliances** — searchable / filterable table (patient, lab, status, sent
   date range) with inline editing. Late arrivals (received after expected) are
   flagged in red.
@@ -44,8 +50,10 @@ Built with **Next.js 14 (App Router) + TypeScript**, **Postgres (Neon) + Prisma*
 | Wednesday          | Sunday           | rolls back to Friday |
 
 This lives in [`lib/expectedReturn.ts`](lib/expectedReturn.ts) as a pure,
-unit-tested function. Status (Overdue / Due Soon / On Track) is **always derived
-from dates, never stored** ([`lib/status.ts`](lib/status.ts)).
+unit-tested function. Status (Incomplete / Overdue / Due Soon / On Track /
+Received) is **always derived from dates, never stored**
+([`lib/status.ts`](lib/status.ts)) — an outstanding appliance with no delivery
+date (and therefore no expected return) derives as **Incomplete**.
 
 ---
 
@@ -235,3 +243,7 @@ scripts/
 - **Soft validations warn, don't block**: a delivery date before the sent date, a
   received date before sent, or a duplicate patient name all surface a warning but
   still let you save.
+- **Partial entries are first-class.** The sent, delivery, and expected-return
+  dates are all optional in the database, so a record can be created before all
+  the info is known. Anything still missing a delivery date shows as Incomplete
+  rather than being blocked at entry.

@@ -16,9 +16,9 @@ export interface ApplianceDTO {
   labId: string;
   labName: string;
   applianceType: string;
-  dateSent: string;
-  deliveryDate: string;
-  expectedReturnDate: string;
+  dateSent: string | null;
+  deliveryDate: string | null;
+  expectedReturnDate: string | null;
   receivedDate: string | null;
   notes: string;
   status: ApplianceStatus;
@@ -36,24 +36,42 @@ export function toDTO(a: ApplianceWithLab, now = new Date()): ApplianceDTO {
     labId: a.labId,
     labName: a.lab.name,
     applianceType: a.applianceType,
-    dateSent: toDateInputValue(a.dateSent),
-    deliveryDate: toDateInputValue(a.deliveryDate),
-    expectedReturnDate: toDateInputValue(a.expectedReturnDate),
+    dateSent: a.dateSent ? toDateInputValue(a.dateSent) : null,
+    deliveryDate: a.deliveryDate ? toDateInputValue(a.deliveryDate) : null,
+    expectedReturnDate: a.expectedReturnDate
+      ? toDateInputValue(a.expectedReturnDate)
+      : null,
     receivedDate: a.receivedDate ? toDateInputValue(a.receivedDate) : null,
     notes: a.notes,
     status: deriveStatus(
       { expectedReturnDate: a.expectedReturnDate, receivedDate: a.receivedDate },
       now
     ),
-    daysOverdue: a.receivedDate ? 0 : daysOverdue(a.expectedReturnDate, now),
+    daysOverdue:
+      a.receivedDate || !a.expectedReturnDate
+        ? 0
+        : daysOverdue(a.expectedReturnDate, now),
     isLate: isLateArrival(a.expectedReturnDate, a.receivedDate),
   };
 }
 
 export interface DashboardData {
+  incomplete: ApplianceDTO[];
   overdue: ApplianceDTO[];
   dueSoon: ApplianceDTO[];
   onTrack: ApplianceDTO[];
+}
+
+/** Group a set of outstanding DTOs by their derived status. */
+function groupByStatus(dtos: ApplianceDTO[]): DashboardData {
+  return {
+    incomplete: dtos.filter((d) => d.status === "INCOMPLETE"),
+    overdue: dtos
+      .filter((d) => d.status === "OVERDUE")
+      .sort((a, b) => b.daysOverdue - a.daysOverdue),
+    dueSoon: dtos.filter((d) => d.status === "DUE_SOON"),
+    onTrack: dtos.filter((d) => d.status === "ON_TRACK"),
+  };
 }
 
 /** Outstanding (not-yet-received) appliances, grouped by derived status. */
@@ -61,17 +79,11 @@ export async function getDashboardData(): Promise<DashboardData> {
   const rows = await prisma.appliance.findMany({
     where: { receivedDate: null },
     include: { lab: true },
+    // Nulls (incomplete entries) sort last here; they're regrouped in memory.
     orderBy: { expectedReturnDate: "asc" },
   });
 
-  const dtos = rows.map((r) => toDTO(r));
-  return {
-    overdue: dtos
-      .filter((d) => d.status === "OVERDUE")
-      .sort((a, b) => b.daysOverdue - a.daysOverdue),
-    dueSoon: dtos.filter((d) => d.status === "DUE_SOON"),
-    onTrack: dtos.filter((d) => d.status === "ON_TRACK"),
-  };
+  return groupByStatus(rows.map((r) => toDTO(r)));
 }
 
 export interface ApplianceFilters {
@@ -127,13 +139,7 @@ export async function getReportData(
   filters: ApplianceFilters = {}
 ): Promise<DashboardData> {
   const dtos = await getAppliances({ ...filters, status: "OUTSTANDING" });
-  return {
-    overdue: dtos
-      .filter((d) => d.status === "OVERDUE")
-      .sort((a, b) => b.daysOverdue - a.daysOverdue),
-    dueSoon: dtos.filter((d) => d.status === "DUE_SOON"),
-    onTrack: dtos.filter((d) => d.status === "ON_TRACK"),
-  };
+  return groupByStatus(dtos);
 }
 
 export async function getLabs(): Promise<Lab[]> {
