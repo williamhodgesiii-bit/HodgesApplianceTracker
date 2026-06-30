@@ -1,17 +1,21 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { authenticate, type LoginState } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-function SubmitButton() {
+function SubmitButton({ redirecting }: { redirecting: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn-primary w-full" disabled={pending}>
-      {pending ? "Signing in…" : "Sign in"}
+    <button
+      type="submit"
+      className="btn-primary w-full"
+      disabled={pending || redirecting}
+    >
+      {pending || redirecting ? "Signing in…" : "Sign in"}
     </button>
   );
 }
@@ -23,6 +27,14 @@ function LoginForm() {
     authenticate,
     {}
   );
+
+  // On a successful sign-in the cookie is already set; do a full-page
+  // navigation so the browser sends it and the middleware sees the session.
+  useEffect(() => {
+    if (state.ok && state.callbackUrl) {
+      window.location.assign(state.callbackUrl);
+    }
+  }, [state.ok, state.callbackUrl]);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -59,7 +71,7 @@ function LoginForm() {
           {state.error}
         </p>
       )}
-      <SubmitButton />
+      <SubmitButton redirecting={!!state.ok} />
     </form>
   );
 }
