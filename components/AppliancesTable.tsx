@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { Lab } from "@prisma/client";
 import type { ApplianceDTO } from "@/lib/queries";
 import { formatInput } from "@/lib/dates";
+import { useUrlFilters } from "@/lib/useUrlFilters";
 import { StatusBadge } from "./StatusBadge";
 import { ApplianceForm } from "./ApplianceForm";
 import {
   markUnreceived,
   deleteAppliance,
 } from "@/lib/appliance-actions";
+
+const FILTER_KEYS = ["q", "labId", "status", "from", "to"] as const;
 
 interface Props {
   appliances: ApplianceDTO[];
@@ -30,15 +33,8 @@ const STATUS_OPTIONS = [
 
 export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { values, setFilter, isPending } = useUrlFilters(FILTER_KEYS);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    router.push(`/appliances?${params.toString()}`);
-  };
 
   return (
     <div className="space-y-4">
@@ -48,21 +44,21 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
           <label className="label">Search patient / appliance</label>
           <input
             className="input"
-            defaultValue={searchParams.get("q") ?? ""}
+            defaultValue={values.q}
             placeholder="Type a name…"
             onKeyDown={(e) => {
               if (e.key === "Enter")
-                setParam("q", (e.target as HTMLInputElement).value);
+                setFilter("q", (e.target as HTMLInputElement).value);
             }}
-            onBlur={(e) => setParam("q", e.target.value)}
+            onBlur={(e) => setFilter("q", e.target.value)}
           />
         </div>
         <div>
           <label className="label">Lab</label>
           <select
             className="input"
-            value={searchParams.get("labId") ?? ""}
-            onChange={(e) => setParam("labId", e.target.value)}
+            value={values.labId}
+            onChange={(e) => setFilter("labId", e.target.value)}
           >
             <option value="">All labs</option>
             {labs.map((l) => (
@@ -76,8 +72,8 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
           <label className="label">Status</label>
           <select
             className="input"
-            value={searchParams.get("status") ?? "ALL"}
-            onChange={(e) => setParam("status", e.target.value)}
+            value={values.status || "ALL"}
+            onChange={(e) => setFilter("status", e.target.value)}
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -92,8 +88,8 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
             <input
               type="date"
               className="input"
-              value={searchParams.get("from") ?? ""}
-              onChange={(e) => setParam("from", e.target.value)}
+              value={values.from}
+              onChange={(e) => setFilter("from", e.target.value)}
             />
           </div>
           <div>
@@ -101,8 +97,8 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
             <input
               type="date"
               className="input"
-              value={searchParams.get("to") ?? ""}
-              onChange={(e) => setParam("to", e.target.value)}
+              value={values.to}
+              onChange={(e) => setFilter("to", e.target.value)}
             />
           </div>
         </div>
@@ -110,6 +106,13 @@ export function AppliancesTable({ appliances, labs, applianceTypes }: Props) {
 
       <p className="text-sm text-slate-500">
         {appliances.length} appliance{appliances.length === 1 ? "" : "s"}
+        <span
+          className={`ml-2 transition-opacity ${
+            isPending ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          · updating…
+        </span>
       </p>
 
       {appliances.length === 0 ? (
