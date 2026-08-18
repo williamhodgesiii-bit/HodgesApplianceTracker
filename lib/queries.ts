@@ -6,7 +6,7 @@ import {
   isLateArrival,
   type ApplianceStatus,
 } from "./status";
-import { toDateInputValue, addDays, today } from "./dates";
+import { toDateInputValue, addDays, today, dateRangeFilter } from "./dates";
 
 /** Serializable shape passed to client components. Dates are YYYY-MM-DD. */
 export interface ApplianceDTO {
@@ -114,9 +114,8 @@ export async function getAppliances(
   }
   if (filters.labId) where.labId = filters.labId;
   if (filters.from || filters.to) {
-    where.dateSent = {};
-    if (filters.from) where.dateSent.gte = new Date(filters.from);
-    if (filters.to) where.dateSent.lte = new Date(filters.to);
+    // Inclusive sent-date range, anchored to UTC midnight (see dateRangeFilter).
+    where.dateSent = dateRangeFilter(filters.from, filters.to);
   }
 
   const rows = await prisma.appliance.findMany({

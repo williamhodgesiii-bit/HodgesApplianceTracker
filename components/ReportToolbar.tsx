@@ -1,9 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import type { Lab } from "@prisma/client";
 import type { ApplianceDTO } from "@/lib/queries";
 import { formatInputWithYear } from "@/lib/dates";
+import { useUrlFilters } from "@/lib/useUrlFilters";
+
+const FILTER_KEYS = ["labId", "from", "to"] as const;
 
 function toCsv(rows: ApplianceDTO[]): string {
   const headers = [
@@ -47,15 +49,7 @@ export function ReportToolbar({
   labs: Lab[];
   rows: ApplianceDTO[];
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    router.push(`/report?${params.toString()}`);
-  };
+  const { values, setFilter, isPending } = useUrlFilters(FILTER_KEYS);
 
   const downloadCsv = () => {
     const csv = toCsv(rows);
@@ -77,8 +71,8 @@ export function ReportToolbar({
         <label className="label">Lab</label>
         <select
           className="input"
-          value={searchParams.get("labId") ?? ""}
-          onChange={(e) => setParam("labId", e.target.value)}
+          value={values.labId}
+          onChange={(e) => setFilter("labId", e.target.value)}
         >
           <option value="">All labs</option>
           {labs.map((l) => (
@@ -93,8 +87,8 @@ export function ReportToolbar({
         <input
           type="date"
           className="input"
-          value={searchParams.get("from") ?? ""}
-          onChange={(e) => setParam("from", e.target.value)}
+          value={values.from}
+          onChange={(e) => setFilter("from", e.target.value)}
         />
       </div>
       <div>
@@ -102,11 +96,19 @@ export function ReportToolbar({
         <input
           type="date"
           className="input"
-          value={searchParams.get("to") ?? ""}
-          onChange={(e) => setParam("to", e.target.value)}
+          value={values.to}
+          onChange={(e) => setFilter("to", e.target.value)}
         />
       </div>
-      <div className="ml-auto flex gap-2">
+      <div className="ml-auto flex items-center gap-2">
+        <span
+          className={`text-xs text-slate-400 transition-opacity ${
+            isPending ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={!isPending}
+        >
+          Updating…
+        </span>
         <button className="btn-secondary" onClick={downloadCsv}>
           ⬇ Export CSV
         </button>
