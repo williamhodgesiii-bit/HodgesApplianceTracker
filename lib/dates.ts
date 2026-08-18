@@ -76,6 +76,28 @@ export function addDays(date: Date, days: number): Date {
   return d;
 }
 
+/**
+ * Build an inclusive calendar-date range filter from a `YYYY-MM-DD` `from`/`to`
+ * pair, anchored to UTC midnight (matching how business dates are stored).
+ *
+ * The upper bound is expressed as `lt` the day *after* `to`, so the entire `to`
+ * day is included. This is the timezone-robust way to express an inclusive
+ * range: an inclusive `lte` at `to`'s midnight drops records the moment a
+ * time-of-day is involved (and is fragile to the server/DB timezone), which is
+ * exactly the "dates don't filter properly" bug this replaces. Parsing via
+ * `parseDateInput` (not the raw `new Date()` constructor) keeps this consistent
+ * with the rest of the app's UTC-midnight handling.
+ */
+export function dateRangeFilter(
+  from?: string | null,
+  to?: string | null
+): { gte?: Date; lt?: Date } {
+  const range: { gte?: Date; lt?: Date } = {};
+  if (from) range.gte = parseDateInput(from);
+  if (to) range.lt = addDays(parseDateInput(to), 1);
+  return range;
+}
+
 /** UTC day of week: 0 = Sunday ... 6 = Saturday. */
 export function dayOfWeek(date: Date): number {
   return toUtcMidnight(date).getUTCDay();
